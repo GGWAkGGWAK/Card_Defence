@@ -12,6 +12,7 @@ namespace CardDefense.Core
         private static Sprite sharedSprite;
         private SpriteRenderer spriteRenderer;
         private TextMesh label;
+        private Color cardColor;
 
         private void Awake()
         {
@@ -28,12 +29,23 @@ namespace CardDefense.Core
             transform.localScale = new Vector3(0.45f, 0.45f, 1f);
         }
 
-        public void SetCard(PlayingCard card)
+        public void SetPlacementSlotStyle()
         {
             EnsureReady();
-            spriteRenderer.color = card.Suit == CardSuit.Heart || card.Suit == CardSuit.Diamond
+            color = new Color(0.3f, 0.75f, 0.68f, 0.18f);
+            size = new Vector2(0.95f, 1.2f);
+            spriteRenderer.color = color;
+            spriteRenderer.sortingOrder = -2;
+            transform.localScale = new Vector3(size.x, size.y, 1f);
+        }
+
+        public void SetCard(PlayingCard card, PokerHand hand, bool isFusionResult)
+        {
+            EnsureReady();
+            cardColor = card.Suit == CardSuit.Heart || card.Suit == CardSuit.Diamond
                 ? new Color(0.95f, 0.78f, 0.78f, 1f)
                 : new Color(0.78f, 0.87f, 0.95f, 1f);
+            spriteRenderer.color = cardColor;
             transform.localScale = new Vector3(0.8f, 1.05f, 1f);
 
             if (label == null)
@@ -49,7 +61,15 @@ namespace CardDefense.Core
                 label.color = Color.black;
             }
 
-            label.text = RankText(card.Rank) + SuitText(card.Suit);
+            label.text = RankText(card.Rank) + SuitText(card.Suit) + "\n" +
+                         PokerHandInfo.ShortName(hand) + (isFusionResult ? " ★" : string.Empty);
+        }
+
+        public void SetSelected(bool selected)
+        {
+            EnsureReady();
+            spriteRenderer.color = selected ? Color.Lerp(cardColor, new Color(1f, 0.82f, 0.12f), 0.55f) : cardColor;
+            transform.localScale = selected ? new Vector3(0.9f, 1.17f, 1f) : new Vector3(0.8f, 1.05f, 1f);
         }
 
         private void EnsureReady()

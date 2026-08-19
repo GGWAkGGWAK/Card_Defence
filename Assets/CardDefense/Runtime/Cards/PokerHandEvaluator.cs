@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace CardDefense.Cards
@@ -13,6 +14,14 @@ namespace CardDefense.Cards
 
             int[] rankCounts = new int[15];
             int[] ranks = new int[5];
+            return EvaluateBuffered(cards, rankCounts, ranks);
+        }
+
+        internal static PokerHand EvaluateBuffered(IReadOnlyList<PlayingCard> cards,
+            int[] rankCounts, int[] ranks)
+        {
+            if (cards == null || cards.Count != 5) return PokerHand.High;
+            Array.Clear(rankCounts, 0, rankCounts.Length);
             CardSuit firstSuit = cards[0].Suit;
             bool flush = true;
 
@@ -24,7 +33,7 @@ namespace CardDefense.Cards
                 flush &= cards[i].Suit == firstSuit;
             }
 
-            System.Array.Sort(ranks);
+            Array.Sort(ranks);
             bool straight = IsStraight(ranks);
             bool royal = straight && ranks[0] == 10 && ranks[4] == 14;
 

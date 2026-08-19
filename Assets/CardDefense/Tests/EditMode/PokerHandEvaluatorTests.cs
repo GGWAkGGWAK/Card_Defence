@@ -47,6 +47,13 @@ namespace CardDefense.Tests
             Assert.AreEqual(PokerHand.FullHouse, PokerHandEvaluator.Evaluate(cards));
         }
 
+        [Test]
+        public void RoyalFlushHasHigherDamageMultiplierThanStraightFlush()
+        {
+            Assert.Greater(PokerHandInfo.DamageMultiplier(PokerHand.RoyalStraightFlush),
+                PokerHandInfo.DamageMultiplier(PokerHand.StraightFlush));
+        }
+
         private static PlayingCard C(CardSuit suit, CardRank rank)
         {
             return new PlayingCard(suit, rank);

@@ -6,7 +6,7 @@ namespace CardDefense.Core
     public sealed class GameBalanceConfig : ScriptableObject
     {
         [Header("Economy")]
-        [Min(0)] public int startingGold = 100;
+        [Min(0)] public int startingGold = 150;
         [Min(1)] public int summonCost = 25;
         [Min(1)] public int baseKillGold = 5;
         [Min(1f)] public float rewardGrowthPerRound = 1.04f;
@@ -29,6 +29,12 @@ namespace CardDefense.Core
         [Min(0.05f)] public float towerAttackInterval = 0.55f;
         [Min(0.5f)] public float towerRange = 3.5f;
         [Min(0.05f)] public float targetRefreshInterval = 0.25f;
+
+        [Header("Poker Progression")]
+        [Min(1)] public int baseHandUpgradeCost = 40;
+        [Min(1f)] public float handUpgradeCostGrowth = 1.32f;
+        [Min(0f)] public float handUpgradeDamageStep = 0.22f;
+        [Min(0.1f)] public float towerSelectionRadius = 0.7f;
 
         [Header("Pooling")]
         [Min(0)] public int monsterPrewarmCount = 96;

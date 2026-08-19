@@ -60,8 +60,7 @@ namespace CardDefense.Enemies
         {
             CurrentRound++;
             SecondsToNextRound = config.roundDuration;
-            remainingToSpawn += config.baseMonstersPerRound +
-                                ((CurrentRound - 1) * config.extraMonstersPerRound);
+            remainingToSpawn += RoundBalanceCalculator.Calculate(config, CurrentRound).MonsterCount;
             RoundChanged?.Invoke(CurrentRound);
         }
 
@@ -70,13 +69,10 @@ namespace CardDefense.Enemies
             Monster monster = pool.Get();
             monster.transform.SetParent(null, true);
 
-            float milestone = 1f + (Mathf.Floor((CurrentRound - 1) / 10f) * config.milestoneHealthBonus);
-            float health = config.baseMonsterHealth *
-                           Mathf.Pow(config.healthGrowthPerRound, CurrentRound - 1) * milestone;
-            int reward = Mathf.CeilToInt(config.baseKillGold *
-                                         Mathf.Pow(config.rewardGrowthPerRound, CurrentRound - 1));
+            RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, CurrentRound);
 
-            monster.Spawn(path, health, config.monsterMoveSpeed, reward, releaseHandler);
+            monster.Spawn(path, balance.HealthPerMonster, config.monsterMoveSpeed,
+                balance.RewardPerMonster, releaseHandler);
             monsters.Register(monster);
 
             if (monsters.ActiveCount >= config.defeatMonsterLimit) LoseGame();

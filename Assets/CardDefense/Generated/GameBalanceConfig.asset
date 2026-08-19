@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01b3bd275cc8417419b28f84c7d7fcf7, type: 3}
   m_Name: GameBalanceConfig
   m_EditorClassIdentifier: 
-  startingGold: 100
+  startingGold: 150
   summonCost: 25
   baseKillGold: 5
   rewardGrowthPerRound: 1.04
@@ -29,5 +29,9 @@ MonoBehaviour:
   towerAttackInterval: 0.55
   towerRange: 3.5
   targetRefreshInterval: 0.25
+  baseHandUpgradeCost: 40
+  handUpgradeCostGrowth: 1.32
+  handUpgradeDamageStep: 0.22
+  towerSelectionRadius: 0.7
   monsterPrewarmCount: 96
   towerPrewarmCount: 24

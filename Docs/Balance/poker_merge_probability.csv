@@ -1,0 +1,12 @@
+﻿Result,KoreanName,Count,OverallProbabilityPercent,ValidMergeProbabilityPercent,BaseDamageMultiplier
+InvalidDuplicateExactCard,동일 카드 중복으로 합성 불가,358524,17.926200,0.000000,0.00
+High,하이,822999,41.149950,50.137742,1.00
+OnePair,원페어,693638,34.681900,42.256969,1.60
+TwoPair,투페어,77775,3.888750,4.738114,2.30
+ThreeOfAKind,트리플,34640,1.732000,2.110296,3.20
+Straight,스트레이트,6304,0.315200,0.384045,4.50
+Flush,플러시,3230,0.161500,0.196774,6.00
+FullHouse,풀하우스,2500,0.125000,0.152302,8.50
+FourOfAKind,포카드,366,0.018300,0.022297,12.00
+StraightFlush,스트레이트 플러시,17,0.000850,0.001036,18.00
+RoyalStraightFlush,로열 스트레이트 플러시,7,0.000350,0.000426,30.00
