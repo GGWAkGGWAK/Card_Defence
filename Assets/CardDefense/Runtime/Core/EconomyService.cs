@@ -1,0 +1,35 @@
+using System;
+using UnityEngine;
+
+namespace CardDefense.Core
+{
+    public sealed class EconomyService : MonoBehaviour
+    {
+        public event Action<int> GoldChanged;
+
+        public int Gold { get; private set; }
+        private GameBalanceConfig config;
+
+        public void Configure(GameBalanceConfig balance)
+        {
+            config = balance;
+            Gold = config != null ? config.startingGold : 0;
+            GoldChanged?.Invoke(Gold);
+        }
+
+        public bool TrySpend(int amount)
+        {
+            if (amount < 0 || Gold < amount) return false;
+            Gold -= amount;
+            GoldChanged?.Invoke(Gold);
+            return true;
+        }
+
+        public void AddGold(int amount)
+        {
+            if (amount <= 0) return;
+            Gold += amount;
+            GoldChanged?.Invoke(Gold);
+        }
+    }
+}

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01b3bd275cc8417419b28f84c7d7fcf7, type: 3}
+  m_Name: GameBalanceConfig
+  m_EditorClassIdentifier: 
+  startingGold: 100
+  summonCost: 25
+  baseKillGold: 5
+  rewardGrowthPerRound: 1.04
+  roundDuration: 20
+  baseMonstersPerRound: 6
+  extraMonstersPerRound: 1
+  spawnInterval: 0.65
+  defeatMonsterLimit: 80
+  baseMonsterHealth: 20
+  healthGrowthPerRound: 1.16
+  monsterMoveSpeed: 1.6
+  milestoneHealthBonus: 0.25
+  baseTowerDamage: 6
+  towerAttackInterval: 0.55
+  towerRange: 3.5
+  targetRefreshInterval: 0.25
+  monsterPrewarmCount: 96
+  towerPrewarmCount: 24

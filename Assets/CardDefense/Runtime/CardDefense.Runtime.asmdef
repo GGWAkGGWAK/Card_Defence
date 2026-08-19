@@ -1,0 +1,16 @@
+{
+  "name": "CardDefense.Runtime",
+  "rootNamespace": "CardDefense",
+  "references": [
+    "Unity.UGUI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
