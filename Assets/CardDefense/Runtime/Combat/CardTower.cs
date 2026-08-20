@@ -16,7 +16,8 @@ namespace CardDefense.Combat
         public bool IsDragging { get; private set; }
         public float CurrentRange => range;
         public float CurrentAttackInterval => attackInterval;
-        public float CurrentDamage => baseDamage * progression.GetDamageMultiplier(Hand);
+        public float CurrentDamage => baseDamage * progression.GetDamageMultiplier(Hand) *
+                                      (modifiers != null ? modifiers.DamageMultiplier : 1f);
         public float EstimatedDps => CurrentDamage * profile.ExpectedDamageMultiplier / attackInterval;
         public string CombatTrait => profile.KoreanTrait;
         public int FusionCoreCardCount { get; private set; }
@@ -33,11 +34,13 @@ namespace CardDefense.Combat
         private PrototypeVisual visual;
         private PokerHandCombatProfile profile;
         private CombatEffectSystem effects;
+        private RunModifierService modifiers;
 
         public void Activate(PlayingCard card, PokerHand hand, bool isFusionResult, int slotIndex,
             MonsterSystem monsterSystem,
             PokerProgressionService progressionService, GameBalanceConfig config,
-            CombatEffectSystem effectSystem, float fusionBaseDamage, int fusionCoreCardCount)
+            CombatEffectSystem effectSystem, RunModifierService modifierService,
+            float fusionBaseDamage, int fusionCoreCardCount)
         {
             Card = card;
             Hand = hand;
@@ -46,6 +49,7 @@ namespace CardDefense.Combat
             monsters = monsterSystem;
             progression = progressionService;
             effects = effectSystem;
+            modifiers = modifierService;
             FusionCoreCardCount = isFusionResult ? fusionCoreCardCount : 1;
             profile = PokerHandCombatProfile.Get(hand);
             range = config.towerRange * profile.RangeMultiplier;
@@ -105,6 +109,7 @@ namespace CardDefense.Combat
             monsters = null;
             progression = null;
             effects = null;
+            modifiers = null;
             SlotIndex = -1;
             IsFusionResult = false;
             FusionCoreCardCount = 0;

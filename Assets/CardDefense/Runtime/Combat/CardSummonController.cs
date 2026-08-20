@@ -12,6 +12,8 @@ namespace CardDefense.Combat
     {
         public event Action<string> MessageChanged;
         public event Action SelectionChanged;
+        public event Action CardSummoned;
+        public event Action<PokerHand> CardsMerged;
 
         public int SelectedCount => selected.Count;
         public PokerHand SelectedHand => focusedTower != null ? focusedTower.Hand : PokerHand.High;
@@ -20,6 +22,8 @@ namespace CardDefense.Combat
         public bool CanMergeSelection => selected.Count == 5 && !SelectedCardsContainExactDuplicate();
         public bool IsPlacementPending { get; private set; }
         public CardTower FocusedTower => focusedTower;
+        public int CurrentSummonCost => modifiers != null ? modifiers.GetSummonCost(config) : config.summonCost;
+        public int AffordableSummons => economy != null ? economy.Gold / Mathf.Max(1, CurrentSummonCost) : 0;
 
         private readonly Queue<CardTower> available = new Queue<CardTower>(32);
         private readonly List<CardTower> selected = new List<CardTower>(5);
@@ -32,6 +36,7 @@ namespace CardDefense.Combat
         private PokerProgressionService progression;
         private GameBalanceConfig config;
         private CombatEffectSystem effects;
+        private RunModifierService modifiers;
         private Transform poolRoot;
         private Camera mainCamera;
         private CardTower focusedTower;
@@ -63,6 +68,11 @@ namespace CardDefense.Combat
             GameObject rangeObject = new GameObject("SelectedTowerRange");
             rangeObject.transform.SetParent(transform, false);
             rangeObject.AddComponent<TowerRangeIndicator>().Configure(this);
+        }
+
+        public void SetRunModifiers(RunModifierService modifierService)
+        {
+            modifiers = modifierService;
         }
 
         private void Update()
@@ -158,13 +168,14 @@ namespace CardDefense.Combat
                 MessageChanged?.Invoke("배치 공간이 가득 찼습니다. 카드를 합성하세요");
                 return;
             }
-            if (economy.Gold < config.summonCost)
+            int summonCost = CurrentSummonCost;
+            if (economy.Gold < summonCost)
             {
                 MessageChanged?.Invoke("골드가 부족합니다");
                 return;
             }
             IsPlacementPending = true;
-            MessageChanged?.Invoke("소환할 빈 슬롯을 선택하세요 (" + config.summonCost + "G)");
+            MessageChanged?.Invoke("소환할 빈 슬롯을 선택하세요 (" + summonCost + "G)");
             SelectionChanged?.Invoke();
         }
 
@@ -177,7 +188,7 @@ namespace CardDefense.Combat
                 MessageChanged?.Invoke("배치 공간이 가득 찼습니다. 카드를 합성하세요");
                 return;
             }
-            if (!economy.TrySpend(config.summonCost))
+            if (!economy.TrySpend(CurrentSummonCost))
             {
                 MessageChanged?.Invoke("골드가 부족합니다");
                 return;
@@ -187,6 +198,7 @@ namespace CardDefense.Combat
                 (CardSuit)UnityEngine.Random.Range(0, 4),
                 (CardRank)UnityEngine.Random.Range(2, 15));
             SpawnTower(card, PokerHand.High, false, slotIndex);
+            CardSummoned?.Invoke();
             MessageChanged?.Invoke("카드 소환: " + card.Rank + " / " + card.Suit);
         }
 
@@ -229,6 +241,7 @@ namespace CardDefense.Combat
             focusedTower = resultTower;
             resultTower.SetSelected(true);
             SelectionChanged?.Invoke();
+            CardsMerged?.Invoke(evaluated);
             MessageChanged?.Invoke("합성 성공: " + PokerHandInfo.KoreanName(evaluated) + " (재합성 불가)");
         }
 
@@ -364,7 +377,7 @@ namespace CardDefense.Combat
             CardTower tower = available.Count > 0 ? available.Dequeue() : CreateTower();
             tower.transform.SetParent(null, true);
             tower.transform.position = slots[slotIndex].position;
-            tower.Activate(card, hand, isFusionResult, slotIndex, monsters, progression, config, effects,
+            tower.Activate(card, hand, isFusionResult, slotIndex, monsters, progression, config, effects, modifiers,
                 fusionBaseDamage, fusionCoreCardCount);
             towers.Register(tower);
             placedBySlot[slotIndex] = tower;
@@ -379,7 +392,7 @@ namespace CardDefense.Combat
                 MessageChanged?.Invoke("빈 슬롯의 중앙을 선택하세요");
                 return;
             }
-            if (!economy.TrySpend(config.summonCost))
+            if (!economy.TrySpend(CurrentSummonCost))
             {
                 IsPlacementPending = false;
                 MessageChanged?.Invoke("골드가 부족합니다");
@@ -390,6 +403,7 @@ namespace CardDefense.Combat
                 (CardSuit)UnityEngine.Random.Range(0, 4),
                 (CardRank)UnityEngine.Random.Range(2, 15));
             SpawnTower(card, PokerHand.High, false, slotIndex);
+            CardSummoned?.Invoke();
             IsPlacementPending = false;
             MessageChanged?.Invoke("카드 배치: " + card.Rank + " / " + card.Suit);
             SelectionChanged?.Invoke();

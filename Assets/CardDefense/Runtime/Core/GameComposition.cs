@@ -34,6 +34,11 @@ namespace CardDefense.Core
         [SerializeField] private Button sellButton;
         [SerializeField] private Button restartButton;
         [SerializeField] private Button speedButton;
+        [SerializeField] private GameObject growthPanel;
+        [SerializeField] private Text growthTitleText;
+        [SerializeField] private Button growthAttackButton;
+        [SerializeField] private Button growthGoldButton;
+        [SerializeField] private Button growthSummonButton;
 
         public void SetReferences(GameBalanceConfig balance, LoopPath loopPath, Monster monster,
             CardTower tower, Transform[] slots, EconomyService economyService,
@@ -43,7 +48,8 @@ namespace CardDefense.Core
             Text alive, Text message, Text selection, Text threat, Button summonButtonReference,
             Button mergeButtonReference, Button upgradeButtonReference,
             Button sellButtonReference, Button restartButtonReference,
-            Button speedButtonReference)
+            Button speedButtonReference, GameObject growthPanelReference, Text growthTitle,
+            Button growthAttack, Button growthGold, Button growthSummon)
         {
             config = balance;
             path = loopPath;
@@ -70,6 +76,11 @@ namespace CardDefense.Core
             sellButton = sellButtonReference;
             restartButton = restartButtonReference;
             speedButton = speedButtonReference;
+            growthPanel = growthPanelReference;
+            growthTitleText = growthTitle;
+            growthAttackButton = growthAttack;
+            growthGoldButton = growthGold;
+            growthSummonButton = growthSummon;
         }
 
         private void Awake()
@@ -77,15 +88,26 @@ namespace CardDefense.Core
             Time.timeScale = 1f;
             economy.Configure(config);
             progression.Configure(config, economy);
+            RunModifierService modifiers = gameObject.AddComponent<RunModifierService>();
+            modifiers.ResetRun();
             monsterPool.Configure(monsterPrefab, config.monsterPrewarmCount);
             CombatEffectSystem effects = gameObject.AddComponent<CombatEffectSystem>();
             effects.Configure(32);
             summon.Configure(towerPrefab, placementSlots, economy, monsters, towers, progression, config, effects);
+            summon.SetRunModifiers(modifiers);
             waves.Configure(config, path, monsterPool, monsters, economy);
+            waves.SetRunModifiers(modifiers);
+            RunStatisticsService statistics = gameObject.AddComponent<RunStatisticsService>();
+            statistics.Configure(waves, summon, progression);
+            PlayerProfileService profile = gameObject.AddComponent<PlayerProfileService>();
+            profile.Configure(waves, statistics);
+            GrowthChoiceController growth = hud.gameObject.AddComponent<GrowthChoiceController>();
+            growth.Configure(growthPanel, growthTitleText, growthAttackButton, growthGoldButton,
+                growthSummonButton, waves, modifiers);
             hud.Configure(goldText, roundText, monsterText, messageText, selectionText, threatText,
                 summonButton, mergeButton, upgradeButton, sellButton, restartButton,
                 speedButton,
-                economy, waves, monsters, summon, towers, config);
+                economy, waves, monsters, summon, towers, config, statistics, profile, growth, modifiers);
         }
     }
 }

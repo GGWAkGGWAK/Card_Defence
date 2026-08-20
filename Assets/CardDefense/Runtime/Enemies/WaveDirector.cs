@@ -10,6 +10,7 @@ namespace CardDefense.Enemies
     {
         public event Action<int> RoundChanged;
         public event Action GameLost;
+        public event Action<int> MonsterDefeated;
 
         public int CurrentRound { get; private set; }
         public float SecondsToNextRound { get; private set; }
@@ -24,6 +25,7 @@ namespace CardDefense.Enemies
         private EconomyService economy;
         private float spawnTimer;
         private Action<Monster, bool, int> releaseHandler;
+        private RunModifierService modifiers;
 
         public void Configure(GameBalanceConfig balance, LoopPath loopPath, MonsterPool monsterPool,
             MonsterSystem monsterSystem, EconomyService economyService)
@@ -36,6 +38,11 @@ namespace CardDefense.Enemies
             releaseHandler = HandleMonsterRelease;
             pendingBatches.Clear();
             SecondsToNextRound = 0f;
+        }
+
+        public void SetRunModifiers(RunModifierService modifierService)
+        {
+            modifiers = modifierService;
         }
 
         private void Start()
@@ -90,7 +97,12 @@ namespace CardDefense.Enemies
         private void HandleMonsterRelease(Monster monster, bool defeated, int reward)
         {
             monsters.Unregister(monster);
-            if (defeated) economy.AddGold(reward);
+            if (defeated)
+            {
+                int adjustedReward = modifiers != null ? modifiers.ApplyKillGold(reward) : reward;
+                economy.AddGold(adjustedReward);
+                MonsterDefeated?.Invoke(adjustedReward);
+            }
             pool.Release(monster);
         }
 

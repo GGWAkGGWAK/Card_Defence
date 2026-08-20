@@ -131,12 +131,15 @@ namespace CardDefense.Editor
             PrototypeHud hud = CreateHud(out Text gold, out Text round, out Text alive,
                 out Text message, out Text selection, out Text threat, out Button summonButton,
                 out Button mergeButton, out Button upgradeButton, out Button sellButton,
-                out Button restartButton, out Button speedButton);
+                out Button restartButton, out Button speedButton, out GameObject growthPanel,
+                out Text growthTitle, out Button growthAttack, out Button growthGold,
+                out Button growthSummon);
 
             composition.SetReferences(config, loopPath, monsterPrefab, towerPrefab, slots,
                 economy, progression, monsterSystem, monsterPool, waves, towerSystem, summon, hud,
                 gold, round, alive, message, selection, threat, summonButton, mergeButton, upgradeButton,
-                sellButton, restartButton, speedButton);
+                sellButton, restartButton, speedButton, growthPanel, growthTitle, growthAttack,
+                growthGold, growthSummon);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -212,7 +215,9 @@ namespace CardDefense.Editor
         private static PrototypeHud CreateHud(out Text gold, out Text round, out Text alive,
             out Text message, out Text selection, out Text threat, out Button summonButton,
             out Button mergeButton, out Button upgradeButton, out Button sellButton,
-            out Button restartButton, out Button speedButton)
+            out Button restartButton, out Button speedButton, out GameObject growthPanel,
+            out Text growthTitle, out Button growthAttack, out Button growthGold,
+            out Button growthSummon)
         {
             GameObject canvasObject = new GameObject("HUD", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             Canvas canvas = canvasObject.GetComponent<Canvas>();
@@ -244,6 +249,27 @@ namespace CardDefense.Editor
             restartButton = CreateButton(canvas.transform, "RestartButton", "새 게임", new Vector2(0.24f, 0.43f), new Vector2(0.76f, 0.53f));
             restartButton.GetComponent<Image>().color = new Color(0.12f, 0.65f, 0.42f, 0.98f);
             speedButton = CreateButton(canvas.transform, "SpeedButton", "x1", new Vector2(0.82f, 0.855f), new Vector2(0.98f, 0.915f));
+
+            growthPanel = new GameObject("GrowthChoicePanel", typeof(RectTransform), typeof(Image));
+            growthPanel.transform.SetParent(canvas.transform, false);
+            RectTransform growthRect = growthPanel.GetComponent<RectTransform>();
+            growthRect.anchorMin = new Vector2(0.08f, 0.28f);
+            growthRect.anchorMax = new Vector2(0.92f, 0.72f);
+            growthRect.offsetMin = Vector2.zero;
+            growthRect.offsetMax = Vector2.zero;
+            growthPanel.GetComponent<Image>().color = new Color(0.03f, 0.08f, 0.1f, 0.97f);
+            growthTitle = CreateText(growthPanel.transform, "GrowthTitle", "성장 선택", 44,
+                TextAnchor.MiddleCenter, new Vector2(0.05f, 0.76f), new Vector2(0.95f, 0.96f), Color.white);
+            growthTitle.fontStyle = FontStyle.Bold;
+            growthAttack = CreateButton(growthPanel.transform, "GrowthAttackButton",
+                "공격 훈련  ·  모든 타워 +15%", new Vector2(0.08f, 0.53f), new Vector2(0.92f, 0.71f));
+            growthGold = CreateButton(growthPanel.transform, "GrowthGoldButton",
+                "현상금  ·  처치 골드 +12%", new Vector2(0.08f, 0.30f), new Vector2(0.92f, 0.48f));
+            growthSummon = CreateButton(growthPanel.transform, "GrowthSummonButton",
+                "조달  ·  소환 비용 -10%", new Vector2(0.08f, 0.07f), new Vector2(0.92f, 0.25f));
+            growthAttack.GetComponentInChildren<Text>().fontSize = 30;
+            growthGold.GetComponentInChildren<Text>().fontSize = 30;
+            growthSummon.GetComponentInChildren<Text>().fontSize = 30;
 
             return canvasObject.AddComponent<PrototypeHud>();
         }

@@ -27,6 +27,10 @@ namespace CardDefense.UI
         private CardSummonController summon;
         private CardTowerSystem towers;
         private GameBalanceConfig config;
+        private RunStatisticsService statistics;
+        private PlayerProfileService profile;
+        private GrowthChoiceController growth;
+        private RunModifierService modifiers;
         private float refreshTimer;
         private float selectedSpeed = 1f;
         private float bossAnnouncementTimer;
@@ -37,7 +41,9 @@ namespace CardDefense.UI
             Button sellButtonReference, Button restartButtonReference,
             Button speedButtonReference,
             EconomyService economyService, WaveDirector waveDirector, MonsterSystem monsterSystem,
-            CardSummonController summonController, CardTowerSystem towerSystem, GameBalanceConfig balance)
+            CardSummonController summonController, CardTowerSystem towerSystem, GameBalanceConfig balance,
+            RunStatisticsService runStatistics, PlayerProfileService playerProfile,
+            GrowthChoiceController growthController, RunModifierService modifierService)
         {
             goldText = gold;
             roundText = round;
@@ -57,6 +63,10 @@ namespace CardDefense.UI
             summon = summonController;
             towers = towerSystem;
             config = balance;
+            statistics = runStatistics;
+            profile = playerProfile;
+            growth = growthController;
+            modifiers = modifierService;
             messageDefaultColor = messageText.color;
 
             summonButton.onClick.AddListener(summon.BeginSummonPlacement);
@@ -70,6 +80,7 @@ namespace CardDefense.UI
             summon.SelectionChanged += RefreshSelection;
             waves.GameLost += HandleGameLost;
             waves.RoundChanged += HandleRoundChanged;
+            growth.ChoiceSelected += HandleGrowthSelected;
             Refresh();
         }
 
@@ -98,6 +109,7 @@ namespace CardDefense.UI
             if (summon != null) summon.SelectionChanged -= RefreshSelection;
             if (waves != null) waves.GameLost -= HandleGameLost;
             if (waves != null) waves.RoundChanged -= HandleRoundChanged;
+            if (growth != null) growth.ChoiceSelected -= HandleGrowthSelected;
         }
 
         private void Refresh()
@@ -128,7 +140,7 @@ namespace CardDefense.UI
             threatText.text = "전투력 " + Mathf.CeilToInt(towerDps) + " / 요구 " +
                               Mathf.CeilToInt(requiredDps) + "  ·  " +
                               CombatThreatEvaluator.KoreanName(level) + "  ·  소환 " +
-                              economy.AffordableSummons + "회";
+                              summon.AffordableSummons + "회 · 성장 " + modifiers.ChoiceCount;
             switch (level)
             {
                 case CombatThreatLevel.Stable:
@@ -163,12 +175,35 @@ namespace CardDefense.UI
         private void HandleGameLost()
         {
             SetMessage("패배: 몬스터 수량 한계 도달");
+            if (selectionText != null && statistics != null && profile != null)
+            {
+                selectionText.text = statistics.GetRunSummary() + "\nBEST R" + profile.Data.BestRound +
+                                     " · 총 플레이 " + profile.Data.TotalRuns + "회 · 누적 처치 " +
+                                     profile.Data.TotalMonstersDefeated;
+            }
             summonButton.interactable = false;
             mergeButton.interactable = false;
             upgradeButton.interactable = false;
             sellButton.interactable = false;
             restartButton.gameObject.SetActive(true);
             speedButton.interactable = false;
+        }
+
+        private void HandleGrowthSelected(RunGrowthChoice choice)
+        {
+            switch (choice)
+            {
+                case RunGrowthChoice.AttackPower:
+                    SetMessage("성장 적용: 모든 타워 공격력 +15%");
+                    break;
+                case RunGrowthChoice.KillGold:
+                    SetMessage("성장 적용: 몬스터 처치 골드 +12%");
+                    break;
+                default:
+                    SetMessage("성장 적용: 카드 소환 비용 -10%");
+                    break;
+            }
+            Refresh();
         }
 
         private void HandleRoundChanged(int round)

@@ -28,6 +28,10 @@ namespace CardDefense.Tests
             Assert.IsNotNull(Object.FindObjectOfType<CombatEffectSystem>());
             Assert.IsNotNull(Object.FindObjectOfType<TowerRangeIndicator>());
             Assert.IsNotNull(GameObject.Find("ThreatText"));
+            Assert.IsNotNull(Object.FindObjectOfType<RunModifierService>());
+            Assert.IsNotNull(Object.FindObjectOfType<RunStatisticsService>());
+            Assert.IsNotNull(Object.FindObjectOfType<PlayerProfileService>());
+            Assert.IsNotNull(Object.FindObjectOfType<GrowthChoiceController>());
 
             WaveDirector waves = Object.FindObjectOfType<WaveDirector>();
             Assert.GreaterOrEqual(waves.CurrentRound, 1);
@@ -35,6 +39,25 @@ namespace CardDefense.Tests
             Assert.IsNotNull(activeMonster);
             Assert.Greater(activeMonster.MaxHealth, 0f);
             Assert.IsNotNull(activeMonster.GetComponent<MonsterHealthBar>());
+        }
+
+        [UnityTest]
+        public IEnumerator BossMilestoneOffersOneRunGrowthChoice()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            GrowthChoiceController growth = Object.FindObjectOfType<GrowthChoiceController>();
+            RunModifierService modifiers = Object.FindObjectOfType<RunModifierService>();
+            Assert.IsFalse(growth.IsChoiceVisible);
+            growth.OfferForTesting(10);
+            Assert.IsTrue(growth.IsChoiceVisible);
+            growth.SelectAttack();
+
+            Assert.IsFalse(growth.IsChoiceVisible);
+            Assert.AreEqual(1.15f, modifiers.DamageMultiplier, 0.001f);
+            Assert.AreEqual(1, modifiers.ChoiceCount);
         }
 
         [UnityTest]
