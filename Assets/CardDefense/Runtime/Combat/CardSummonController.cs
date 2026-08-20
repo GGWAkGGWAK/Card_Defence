@@ -16,8 +16,10 @@ namespace CardDefense.Combat
         public int SelectedCount => selected.Count;
         public PokerHand SelectedHand => focusedTower != null ? focusedTower.Hand : PokerHand.High;
         public bool CanUpgradeSelection => focusedTower != null;
+        public bool CanSellSelection => focusedTower != null;
         public bool CanMergeSelection => selected.Count == 5 && !SelectedCardsContainExactDuplicate();
         public bool IsPlacementPending { get; private set; }
+        public CardTower FocusedTower => focusedTower;
 
         private readonly Queue<CardTower> available = new Queue<CardTower>(32);
         private readonly List<CardTower> selected = new List<CardTower>(5);
@@ -29,13 +31,18 @@ namespace CardDefense.Combat
         private CardTowerSystem towers;
         private PokerProgressionService progression;
         private GameBalanceConfig config;
+        private CombatEffectSystem effects;
         private Transform poolRoot;
         private Camera mainCamera;
         private CardTower focusedTower;
+        private CardTower dragCandidate;
+        private Vector2 dragStartScreen;
+        private bool dragging;
+        private bool dragWasSelected;
 
         public void Configure(CardTower towerPrefab, Transform[] placementSlots, EconomyService economyService,
             MonsterSystem monsterSystem, CardTowerSystem towerSystem, PokerProgressionService progressionService,
-            GameBalanceConfig balance)
+            GameBalanceConfig balance, CombatEffectSystem effectSystem)
         {
             prefab = towerPrefab;
             slots = placementSlots;
@@ -45,28 +52,103 @@ namespace CardDefense.Combat
             towers = towerSystem;
             progression = progressionService;
             config = balance;
+            effects = effectSystem;
             mainCamera = Camera.main;
 
             GameObject root = new GameObject("CardTowerPool_Inactive");
             poolRoot = root.transform;
             poolRoot.SetParent(transform, false);
             for (int i = 0; i < config.towerPrewarmCount; i++) available.Enqueue(CreateTower());
+
+            GameObject rangeObject = new GameObject("SelectedTowerRange");
+            rangeObject.transform.SetParent(transform, false);
+            rangeObject.AddComponent<TowerRangeIndicator>().Configure(this);
         }
 
         private void Update()
         {
-            if (!TryGetPointerDown(out Vector2 screenPosition) || IsPointerOverUi()) return;
+            if (!TryGetPointerState(out Vector2 screenPosition, out bool down, out bool held, out bool up)) return;
             if (mainCamera == null) mainCamera = Camera.main;
             if (mainCamera == null) return;
             Vector3 world = mainCamera.ScreenToWorldPoint(screenPosition);
             world.z = 0f;
             if (IsPlacementPending)
             {
-                TryPlaceAt(world);
+                if (down && !IsPointerOverUi()) TryPlaceAt(world);
                 return;
             }
-            CardTower tower = towers.FindClosest(world, config.towerSelectionRadius);
-            if (tower != null) ToggleSelection(tower);
+
+            if (down)
+            {
+                if (IsPointerOverUi()) return;
+                dragCandidate = towers.FindClosest(world, config.towerSelectionRadius);
+                if (dragCandidate == null) return;
+                dragStartScreen = screenPosition;
+                dragWasSelected = dragCandidate.IsSelected;
+                dragging = false;
+            }
+
+            if (dragCandidate != null && held)
+            {
+                if (!dragging && (screenPosition - dragStartScreen).sqrMagnitude >=
+                    config.cardDragThresholdPixels * config.cardDragThresholdPixels)
+                {
+                    dragging = true;
+                    dragCandidate.SetDragging(true);
+                    dragCandidate.SetSelected(true);
+                }
+                if (dragging) dragCandidate.transform.position = world;
+            }
+
+            if (dragCandidate == null || !up) return;
+            CardTower releasedTower = dragCandidate;
+            if (dragging)
+            {
+                int targetSlot = FindClosestAnySlot(world, config.towerSelectionRadius * 1.35f);
+                if (!MoveTowerToSlot(releasedTower, targetSlot))
+                {
+                    releasedTower.MoveToSlot(releasedTower.SlotIndex, slots[releasedTower.SlotIndex].position);
+                    MessageChanged?.Invoke("이동 취소: 슬롯 위에 놓으세요");
+                }
+                releasedTower.SetDragging(false);
+                releasedTower.SetSelected(dragWasSelected);
+            }
+            else if (!IsPointerOverUi())
+            {
+                ToggleSelection(releasedTower);
+            }
+            dragCandidate = null;
+            dragging = false;
+        }
+
+        public bool MoveTowerToSlot(CardTower tower, int targetSlotIndex)
+        {
+            if (tower == null || tower.SystemIndex < 0 || targetSlotIndex < 0 ||
+                targetSlotIndex >= slots.Length) return false;
+
+            int sourceSlotIndex = tower.SlotIndex;
+            if (sourceSlotIndex == targetSlotIndex)
+            {
+                tower.MoveToSlot(sourceSlotIndex, slots[sourceSlotIndex].position);
+                return true;
+            }
+
+            CardTower targetTower = placedBySlot[targetSlotIndex];
+            placedBySlot[targetSlotIndex] = tower;
+            tower.MoveToSlot(targetSlotIndex, slots[targetSlotIndex].position);
+            if (targetTower == null)
+            {
+                placedBySlot[sourceSlotIndex] = null;
+                MessageChanged?.Invoke("카드를 빈 슬롯으로 이동했습니다");
+            }
+            else
+            {
+                placedBySlot[sourceSlotIndex] = targetTower;
+                targetTower.MoveToSlot(sourceSlotIndex, slots[sourceSlotIndex].position);
+                MessageChanged?.Invoke("두 카드의 위치를 교환했습니다");
+            }
+            SelectionChanged?.Invoke();
+            return true;
         }
 
         public void BeginSummonPlacement()
@@ -108,6 +190,14 @@ namespace CardDefense.Combat
             MessageChanged?.Invoke("카드 소환: " + card.Rank + " / " + card.Suit);
         }
 
+#if UNITY_EDITOR
+        public void SummonForTesting(PlayingCard card)
+        {
+            int slotIndex = FindFirstFreeSlot();
+            if (slotIndex >= 0) SpawnTower(card, PokerHand.High, false, slotIndex);
+        }
+#endif
+
         public void MergeSelected()
         {
             if (selected.Count != 5)
@@ -125,17 +215,17 @@ namespace CardDefense.Combat
 
             PlayingCard[] cards = new PlayingCard[5];
             int outputSlot = selected[0].SlotIndex;
-            PlayingCard representative = selected[0].Card;
             for (int i = 0; i < selected.Count; i++)
             {
                 cards[i] = selected[i].Card;
-                if ((int)selected[i].Card.Rank > (int)representative.Rank) representative = selected[i].Card;
             }
 
             PokerHand evaluated = PokerHandEvaluator.Evaluate(cards);
+            PokerFusionCombatResult fusion = PokerFusionCombatCalculator.Calculate(config, cards, evaluated);
             for (int i = selected.Count - 1; i >= 0; i--) ReleaseTower(selected[i]);
             selected.Clear();
-            CardTower resultTower = SpawnTower(representative, evaluated, true, outputSlot);
+            CardTower resultTower = SpawnTower(fusion.RepresentativeCard, evaluated, true, outputSlot,
+                fusion.BaseDamage, fusion.CoreCardCount);
             focusedTower = resultTower;
             resultTower.SetSelected(true);
             SelectionChanged?.Invoke();
@@ -160,6 +250,29 @@ namespace CardDefense.Combat
             SelectionChanged?.Invoke();
         }
 
+        public void SellFocusedTower()
+        {
+            if (focusedTower == null)
+            {
+                MessageChanged?.Invoke("판매할 카드를 선택하세요");
+                return;
+            }
+
+            CardTower tower = focusedTower;
+            int refund = GetSellValue(tower);
+            selected.Remove(tower);
+            focusedTower = selected.Count > 0 ? selected[selected.Count - 1] : null;
+            ReleaseTower(tower);
+            economy.AddGold(refund);
+            MessageChanged?.Invoke("카드 판매: +" + refund + "G");
+            SelectionChanged?.Invoke();
+        }
+
+        public int GetFocusedSellValue()
+        {
+            return focusedTower != null ? GetSellValue(focusedTower) : 0;
+        }
+
         public string GetSelectionSummary()
         {
             if (IsPlacementPending) return "배치 모드  |  빛나는 빈 슬롯을 선택";
@@ -168,7 +281,8 @@ namespace CardDefense.Combat
                 PokerHand completedHand = focusedTower.Hand;
                 return "합성 완료 · 재합성 불가  |  " + PokerHandInfo.KoreanName(completedHand) +
                        " Lv." + progression.GetLevel(completedHand) + "  |  강화 " +
-                       progression.GetUpgradeCost(completedHand) + "G";
+                       progression.GetUpgradeCost(completedHand) + "G  |  판매 " + GetFocusedSellValue() + "G\n" +
+                       GetFocusedCombatSummary();
             }
             if (selected.Count == 0) return "카드를 터치해 선택";
             PokerHand hand = SelectedHand;
@@ -178,7 +292,20 @@ namespace CardDefense.Combat
                     : "  |  예상 " + PokerHandInfo.KoreanName(GetMergePreviewHand()))
                 : string.Empty;
             return "선택 " + selected.Count + "/5  |  " + PokerHandInfo.KoreanName(hand) +
-                   " Lv." + progression.GetLevel(hand) + "  |  강화 " + progression.GetUpgradeCost(hand) + "G" + preview;
+                   " Lv." + progression.GetLevel(hand) + "  |  강화 " + progression.GetUpgradeCost(hand) +
+                   "G  |  판매 " + GetFocusedSellValue() + "G" + preview + "\n" + GetFocusedCombatSummary();
+        }
+
+        public string GetFocusedCombatSummary()
+        {
+            if (focusedTower == null) return string.Empty;
+            return "공격 " + focusedTower.CurrentDamage.ToString("0.0") + "  |  DPS " +
+                   focusedTower.EstimatedDps.ToString("0.0") + "  |  사거리 " +
+                   focusedTower.CurrentRange.ToString("0.0") + "  |  " + focusedTower.CombatTrait +
+                   (focusedTower.IsFusionResult
+                       ? "  |  핵심 " + focusedTower.FusionCoreCardCount + "장·잔여 " +
+                         Mathf.RoundToInt(config.discardedMaterialPowerRatio * 100f) + "%"
+                       : string.Empty);
         }
 
         public PokerHand GetMergePreviewHand()
@@ -231,12 +358,14 @@ namespace CardDefense.Combat
             SelectionChanged?.Invoke();
         }
 
-        private CardTower SpawnTower(PlayingCard card, PokerHand hand, bool isFusionResult, int slotIndex)
+        private CardTower SpawnTower(PlayingCard card, PokerHand hand, bool isFusionResult, int slotIndex,
+            float fusionBaseDamage = 0f, int fusionCoreCardCount = 1)
         {
             CardTower tower = available.Count > 0 ? available.Dequeue() : CreateTower();
             tower.transform.SetParent(null, true);
             tower.transform.position = slots[slotIndex].position;
-            tower.Activate(card, hand, isFusionResult, slotIndex, monsters, progression, config);
+            tower.Activate(card, hand, isFusionResult, slotIndex, monsters, progression, config, effects,
+                fusionBaseDamage, fusionCoreCardCount);
             towers.Register(tower);
             placedBySlot[slotIndex] = tower;
             return tower;
@@ -281,6 +410,20 @@ namespace CardDefense.Combat
             return bestIndex;
         }
 
+        private int FindClosestAnySlot(Vector3 position, float radius)
+        {
+            float bestDistance = radius * radius;
+            int bestIndex = -1;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                float distance = (slots[i].position - position).sqrMagnitude;
+                if (distance > bestDistance) continue;
+                bestDistance = distance;
+                bestIndex = i;
+            }
+            return bestIndex;
+        }
+
         private void ClearMergeSelection()
         {
             for (int i = 0; i < selected.Count; i++) selected[i].SetSelected(false);
@@ -299,6 +442,12 @@ namespace CardDefense.Combat
                 }
             }
             return false;
+        }
+
+        private int GetSellValue(CardTower tower)
+        {
+            if (!tower.IsFusionResult) return config.baseCardSellGold;
+            return config.fusionSellBaseGold + ((int)tower.Hand * config.fusionSellTierBonus);
         }
 
         private void ReleaseTower(CardTower tower)
@@ -327,19 +476,30 @@ namespace CardDefense.Combat
             return instance;
         }
 
-        private static bool TryGetPointerDown(out Vector2 position)
+        private static bool TryGetPointerState(out Vector2 position, out bool down, out bool held, out bool up)
         {
-            if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+            if (Input.touchCount > 0)
             {
-                position = Input.GetTouch(0).position;
+                Touch touch = Input.GetTouch(0);
+                position = touch.position;
+                down = touch.phase == TouchPhase.Began;
+                held = touch.phase == TouchPhase.Began || touch.phase == TouchPhase.Moved ||
+                       touch.phase == TouchPhase.Stationary;
+                up = touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled;
                 return true;
             }
-            if (Input.GetMouseButtonDown(0))
+            down = Input.GetMouseButtonDown(0);
+            held = Input.GetMouseButton(0);
+            up = Input.GetMouseButtonUp(0);
+            if (down || held || up)
             {
                 position = Input.mousePosition;
                 return true;
             }
             position = default;
+            down = false;
+            held = false;
+            up = false;
             return false;
         }
 

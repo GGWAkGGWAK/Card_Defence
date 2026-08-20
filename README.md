@@ -11,6 +11,9 @@ Android-first poker defense prototype built with Unity `2022.3.19f1` and URP 2D.
 ## Implemented prototype systems
 
 - Closed-loop monster movement; survivors persist between timed rounds.
+- Normal, fast, tank, gold, and boss monster archetypes with distinct health, speed, reward, color, and size.
+- Every tenth round begins with a boss; all monsters show world health bars and the HUD shows active boss HP.
+- Queued overlapping waves retain the health, reward, and archetype rules of their original round.
 - Monster-count loss condition.
 - Kill-gold economy and paid random card summons.
 - Four suits and ranks 2 through Ace.
@@ -26,13 +29,18 @@ Android-first poker defense prototype built with Unity `2022.3.19f1` and URP 2D.
 
 - **소환**: enters placement mode; tap/click a preferred empty slot to spend gold and place the card.
 - Card tap/click: selects or deselects up to five field cards.
+- Card drag to an empty slot: moves the tower without cost.
+- Card drag onto an occupied slot: swaps the two tower positions.
 - **5장 합성**: consumes five selected cards and creates one poker-hand tower.
 - **족보 강화**: upgrades the selected card's hand grade for every matching tower.
+- **판매**: removes the focused tower, immediately frees its slot, and refunds part of its value.
 - With five cards selected, the HUD previews the resulting poker hand before merging.
 - A five-card fusion result is final: it shows a star, cannot be selected for another merge,
   and can only be used as the target hand for upgrades.
 - A merge is blocked when the five selected cards contain the exact same suit and rank more than once.
   Equal ranks with different suits remain valid.
+- After defeat, **새 게임** reloads the gameplay scene and resets the run.
+- **x1/x2/x4** cycles gameplay speed without a pause mode.
 
 ## Balance report
 

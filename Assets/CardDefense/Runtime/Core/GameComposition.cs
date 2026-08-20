@@ -27,17 +27,23 @@ namespace CardDefense.Core
         [SerializeField] private Text monsterText;
         [SerializeField] private Text messageText;
         [SerializeField] private Text selectionText;
+        [SerializeField] private Text threatText;
         [SerializeField] private Button summonButton;
         [SerializeField] private Button mergeButton;
         [SerializeField] private Button upgradeButton;
+        [SerializeField] private Button sellButton;
+        [SerializeField] private Button restartButton;
+        [SerializeField] private Button speedButton;
 
         public void SetReferences(GameBalanceConfig balance, LoopPath loopPath, Monster monster,
             CardTower tower, Transform[] slots, EconomyService economyService,
             PokerProgressionService progressionService, MonsterSystem monsterSystem,
             MonsterPool pool, WaveDirector waveDirector, CardTowerSystem towerSystem,
             CardSummonController summonController, PrototypeHud prototypeHud, Text gold, Text round,
-            Text alive, Text message, Text selection, Button summonButtonReference,
-            Button mergeButtonReference, Button upgradeButtonReference)
+            Text alive, Text message, Text selection, Text threat, Button summonButtonReference,
+            Button mergeButtonReference, Button upgradeButtonReference,
+            Button sellButtonReference, Button restartButtonReference,
+            Button speedButtonReference)
         {
             config = balance;
             path = loopPath;
@@ -57,9 +63,13 @@ namespace CardDefense.Core
             monsterText = alive;
             messageText = message;
             selectionText = selection;
+            threatText = threat;
             summonButton = summonButtonReference;
             mergeButton = mergeButtonReference;
             upgradeButton = upgradeButtonReference;
+            sellButton = sellButtonReference;
+            restartButton = restartButtonReference;
+            speedButton = speedButtonReference;
         }
 
         private void Awake()
@@ -68,10 +78,14 @@ namespace CardDefense.Core
             economy.Configure(config);
             progression.Configure(config, economy);
             monsterPool.Configure(monsterPrefab, config.monsterPrewarmCount);
-            summon.Configure(towerPrefab, placementSlots, economy, monsters, towers, progression, config);
+            CombatEffectSystem effects = gameObject.AddComponent<CombatEffectSystem>();
+            effects.Configure(32);
+            summon.Configure(towerPrefab, placementSlots, economy, monsters, towers, progression, config, effects);
             waves.Configure(config, path, monsterPool, monsters, economy);
-            hud.Configure(goldText, roundText, monsterText, messageText, selectionText,
-                summonButton, mergeButton, upgradeButton, economy, waves, monsters, summon);
+            hud.Configure(goldText, roundText, monsterText, messageText, selectionText, threatText,
+                summonButton, mergeButton, upgradeButton, sellButton, restartButton,
+                speedButton,
+                economy, waves, monsters, summon, towers, config);
         }
     }
 }

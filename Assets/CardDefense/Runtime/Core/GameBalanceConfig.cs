@@ -8,8 +8,11 @@ namespace CardDefense.Core
         [Header("Economy")]
         [Min(0)] public int startingGold = 150;
         [Min(1)] public int summonCost = 25;
+        [Min(0)] public int baseCardSellGold = 8;
+        [Min(0)] public int fusionSellBaseGold = 30;
+        [Min(0)] public int fusionSellTierBonus = 8;
         [Min(1)] public int baseKillGold = 5;
-        [Min(1f)] public float rewardGrowthPerRound = 1.04f;
+        [Min(1f)] public float rewardGrowthPerRound = 1.065f;
 
         [Header("Rounds")]
         [Min(5f)] public float roundDuration = 20f;
@@ -20,21 +23,36 @@ namespace CardDefense.Core
 
         [Header("Monster")]
         [Min(1f)] public float baseMonsterHealth = 20f;
-        [Min(1f)] public float healthGrowthPerRound = 1.16f;
+        [Min(1f)] public float healthGrowthPerRound = 1.09f;
         [Min(0.1f)] public float monsterMoveSpeed = 1.6f;
-        [Range(0f, 1f)] public float milestoneHealthBonus = 0.25f;
+        [Range(0f, 1f)] public float milestoneHealthBonus = 0.15f;
+
+        [Header("Monster Archetypes")]
+        [Min(0.1f)] public float fastHealthMultiplier = 0.65f;
+        [Min(0.1f)] public float fastSpeedMultiplier = 1.8f;
+        [Min(0.1f)] public float fastRewardMultiplier = 1.2f;
+        [Min(0.1f)] public float tankHealthMultiplier = 2.3f;
+        [Min(0.1f)] public float tankSpeedMultiplier = 0.7f;
+        [Min(0.1f)] public float tankRewardMultiplier = 2f;
+        [Min(0.1f)] public float goldHealthMultiplier = 1.2f;
+        [Min(0.1f)] public float goldRewardMultiplier = 3f;
+        [Min(0.1f)] public float bossHealthMultiplier = 10f;
+        [Min(0.1f)] public float bossSpeedMultiplier = 0.55f;
+        [Min(0.1f)] public float bossRewardMultiplier = 10f;
 
         [Header("Tower")]
         [Min(0.1f)] public float baseTowerDamage = 6f;
         [Min(0.05f)] public float towerAttackInterval = 0.55f;
         [Min(0.5f)] public float towerRange = 3.5f;
         [Min(0.05f)] public float targetRefreshInterval = 0.25f;
+        [Range(0f, 0.5f)] public float discardedMaterialPowerRatio = 0.1f;
 
         [Header("Poker Progression")]
         [Min(1)] public int baseHandUpgradeCost = 40;
-        [Min(1f)] public float handUpgradeCostGrowth = 1.32f;
-        [Min(0f)] public float handUpgradeDamageStep = 0.22f;
+        [Min(1f)] public float handUpgradeCostGrowth = 1.26f;
+        [Min(0f)] public float handUpgradeDamageStep = 0.18f;
         [Min(0.1f)] public float towerSelectionRadius = 0.7f;
+        [Min(1f)] public float cardDragThresholdPixels = 24f;
 
         [Header("Pooling")]
         [Min(0)] public int monsterPrewarmCount = 96;

@@ -22,11 +22,32 @@ namespace CardDefense.Core
             transform.localScale = new Vector3(size.x, size.y, 1f);
         }
 
-        public void SetMonsterStyle()
+        public void SetMonsterStyle(CardDefense.Enemies.MonsterArchetype archetype)
         {
             EnsureReady();
-            spriteRenderer.color = new Color(0.85f, 0.25f, 0.22f, 1f);
-            transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+            switch (archetype)
+            {
+                case CardDefense.Enemies.MonsterArchetype.Fast:
+                    spriteRenderer.color = new Color(0.25f, 0.75f, 1f, 1f);
+                    transform.localScale = new Vector3(0.38f, 0.38f, 1f);
+                    break;
+                case CardDefense.Enemies.MonsterArchetype.Tank:
+                    spriteRenderer.color = new Color(0.55f, 0.32f, 0.82f, 1f);
+                    transform.localScale = new Vector3(0.62f, 0.62f, 1f);
+                    break;
+                case CardDefense.Enemies.MonsterArchetype.Gold:
+                    spriteRenderer.color = new Color(1f, 0.76f, 0.12f, 1f);
+                    transform.localScale = new Vector3(0.48f, 0.48f, 1f);
+                    break;
+                case CardDefense.Enemies.MonsterArchetype.Boss:
+                    spriteRenderer.color = new Color(0.95f, 0.08f, 0.18f, 1f);
+                    transform.localScale = new Vector3(0.95f, 0.95f, 1f);
+                    break;
+                default:
+                    spriteRenderer.color = new Color(0.85f, 0.25f, 0.22f, 1f);
+                    transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+                    break;
+            }
         }
 
         public void SetPlacementSlotStyle()
@@ -61,7 +82,10 @@ namespace CardDefense.Core
                 label.color = Color.black;
             }
 
-            label.text = RankText(card.Rank) + SuitText(card.Suit) + "\n" +
+            bool suitDefinesFusion = hand == PokerHand.Flush || hand == PokerHand.StraightFlush ||
+                                     hand == PokerHand.RoyalStraightFlush;
+            string suit = !isFusionResult || suitDefinesFusion ? SuitText(card.Suit) : string.Empty;
+            label.text = RankText(card.Rank) + suit + "\n" +
                          PokerHandInfo.ShortName(hand) + (isFusionResult ? " ★" : string.Empty);
         }
 

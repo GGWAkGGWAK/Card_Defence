@@ -23,6 +23,10 @@ namespace CardDefense.Tests
 
             Assert.AreEqual(8, progression.GetLevel(PokerHand.OnePair));
             Assert.Greater(progression.GetDamageMultiplier(PokerHand.OnePair), before);
+            float expected = PokerHandInfo.DamageMultiplier(PokerHand.OnePair) *
+                             Mathf.Pow(1f + config.handUpgradeDamageStep, 8);
+            Assert.AreEqual(expected, progression.GetDamageMultiplier(PokerHand.OnePair), 0.001f,
+                "Unlimited upgrades must retain multiplicative value at high levels.");
             Assert.Less(economy.Gold, config.startingGold);
 
             Object.DestroyImmediate(gameObject);

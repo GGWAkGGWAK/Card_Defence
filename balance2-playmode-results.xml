@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="7" result="Passed" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:39Z" duration="2.3267773">
+  <test-suite type="TestSuite" id="1000" name="Card Defense" fullname="Card Defense" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:39Z" duration="2.326777" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties />
+    <test-suite type="Assembly" id="1009" name="CardDefense.PlayModeTests.dll" fullname="C:/Users/dltlg/Desktop/GitHub/Card-Defense/Card_Defence/Library/ScriptAssemblies/CardDefense.PlayModeTests.dll" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:39Z" duration="2.322365" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13272" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1010" name="CardDefense" fullname="CardDefense" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:39Z" duration="2.307943" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1011" name="Tests" fullname="CardDefense.Tests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:39Z" duration="2.291203" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="PrototypeSceneSmokeTests" fullname="CardDefense.Tests.PrototypeSceneSmokeTests" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:39Z" duration="2.273491" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1005" name="ExactDuplicateCardsCannotBeConsumedByMerge" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.ExactDuplicateCardsCannotBeConsumedByMerge" methodname="ExactDuplicateCardsCannotBeConsumedByMerge" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="1434474841" result="Passed" start-time="2026-08-20 05:34:37Z" end-time="2026-08-20 05:34:38Z" duration="0.855442" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1004" name="FiveSelectedCardsMergeIntoOneTower" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.FiveSelectedCardsMergeIntoOneTower" methodname="FiveSelectedCardsMergeIntoOneTower" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="1679268650" result="Passed" start-time="2026-08-20 05:34:38Z" end-time="2026-08-20 05:34:38Z" duration="0.242195" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1002" name="PrototypeSceneStartsCoreSystems" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.PrototypeSceneStartsCoreSystems" methodname="PrototypeSceneStartsCoreSystems" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="1727820792" result="Passed" start-time="2026-08-20 05:34:38Z" end-time="2026-08-20 05:34:38Z" duration="0.234610" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1003" name="SelectedTowerShowsCombatStatsAndRange" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.SelectedTowerShowsCombatStatsAndRange" methodname="SelectedTowerShowsCombatStatsAndRange" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="613588791" result="Passed" start-time="2026-08-20 05:34:38Z" end-time="2026-08-20 05:34:39Z" duration="0.237960" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1008" name="SpeedControlCyclesOneTwoFourOne" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.SpeedControlCyclesOneTwoFourOne" methodname="SpeedControlCyclesOneTwoFourOne" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="895160736" result="Passed" start-time="2026-08-20 05:34:39Z" end-time="2026-08-20 05:34:39Z" duration="0.234371" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1006" name="SummonButtonEntersPlacementModeWithoutSpendingGold" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.SummonButtonEntersPlacementModeWithoutSpendingGold" methodname="SummonButtonEntersPlacementModeWithoutSpendingGold" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="1970955262" result="Passed" start-time="2026-08-20 05:34:39Z" end-time="2026-08-20 05:34:39Z" duration="0.223087" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1007" name="TowersCanMoveToEmptySlotsAndSwapPositions" fullname="CardDefense.Tests.PrototypeSceneSmokeTests.TowersCanMoveToEmptySlotsAndSwapPositions" methodname="TowersCanMoveToEmptySlotsAndSwapPositions" classname="CardDefense.Tests.PrototypeSceneSmokeTests" runstate="Runnable" seed="1354797247" result="Passed" start-time="2026-08-20 05:34:39Z" end-time="2026-08-20 05:34:39Z" duration="0.224311" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

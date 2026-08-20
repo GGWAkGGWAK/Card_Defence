@@ -129,12 +129,14 @@ namespace CardDefense.Editor
             LoopPath loopPath = CreateLoopPath();
             Transform[] slots = CreatePlacementSlots();
             PrototypeHud hud = CreateHud(out Text gold, out Text round, out Text alive,
-                out Text message, out Text selection, out Button summonButton,
-                out Button mergeButton, out Button upgradeButton);
+                out Text message, out Text selection, out Text threat, out Button summonButton,
+                out Button mergeButton, out Button upgradeButton, out Button sellButton,
+                out Button restartButton, out Button speedButton);
 
             composition.SetReferences(config, loopPath, monsterPrefab, towerPrefab, slots,
                 economy, progression, monsterSystem, monsterPool, waves, towerSystem, summon, hud,
-                gold, round, alive, message, selection, summonButton, mergeButton, upgradeButton);
+                gold, round, alive, message, selection, threat, summonButton, mergeButton, upgradeButton,
+                sellButton, restartButton, speedButton);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -208,8 +210,9 @@ namespace CardDefense.Editor
         }
 
         private static PrototypeHud CreateHud(out Text gold, out Text round, out Text alive,
-            out Text message, out Text selection, out Button summonButton,
-            out Button mergeButton, out Button upgradeButton)
+            out Text message, out Text selection, out Text threat, out Button summonButton,
+            out Button mergeButton, out Button upgradeButton, out Button sellButton,
+            out Button restartButton, out Button speedButton)
         {
             GameObject canvasObject = new GameObject("HUD", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             Canvas canvas = canvasObject.GetComponent<Canvas>();
@@ -229,12 +232,18 @@ namespace CardDefense.Editor
             alive = CreateText(canvas.transform, "MonsterText", "MONSTERS 0", 38, TextAnchor.MiddleRight,
                 new Vector2(0.66f, 0.92f), new Vector2(0.96f, 0.985f), new Color(1f, 0.45f, 0.42f));
             message = CreateText(canvas.transform, "MessageText", "카드를 소환해 방어를 시작하세요", 32, TextAnchor.MiddleCenter,
-                new Vector2(0.05f, 0.145f), new Vector2(0.95f, 0.20f), Color.white);
+                new Vector2(0.05f, 0.165f), new Vector2(0.95f, 0.215f), Color.white);
             selection = CreateText(canvas.transform, "SelectionText", "카드를 터치해 선택", 27, TextAnchor.MiddleCenter,
-                new Vector2(0.04f, 0.095f), new Vector2(0.96f, 0.145f), new Color(1f, 0.86f, 0.35f));
-            summonButton = CreateButton(canvas.transform, "SummonButton", "소환", new Vector2(0.02f, 0.015f), new Vector2(0.32f, 0.09f));
-            mergeButton = CreateButton(canvas.transform, "MergeButton", "5장 합성", new Vector2(0.35f, 0.015f), new Vector2(0.65f, 0.09f));
-            upgradeButton = CreateButton(canvas.transform, "UpgradeButton", "족보 강화", new Vector2(0.68f, 0.015f), new Vector2(0.98f, 0.09f));
+                new Vector2(0.04f, 0.095f), new Vector2(0.96f, 0.165f), new Color(1f, 0.86f, 0.35f));
+            threat = CreateText(canvas.transform, "ThreatText", "전투력 계산 중", 30, TextAnchor.MiddleLeft,
+                new Vector2(0.04f, 0.855f), new Vector2(0.80f, 0.915f), new Color(1f, 0.85f, 0.25f));
+            summonButton = CreateButton(canvas.transform, "SummonButton", "소환", new Vector2(0.01f, 0.015f), new Vector2(0.245f, 0.09f));
+            mergeButton = CreateButton(canvas.transform, "MergeButton", "5장 합성", new Vector2(0.255f, 0.015f), new Vector2(0.49f, 0.09f));
+            upgradeButton = CreateButton(canvas.transform, "UpgradeButton", "강화", new Vector2(0.51f, 0.015f), new Vector2(0.745f, 0.09f));
+            sellButton = CreateButton(canvas.transform, "SellButton", "판매", new Vector2(0.755f, 0.015f), new Vector2(0.99f, 0.09f));
+            restartButton = CreateButton(canvas.transform, "RestartButton", "새 게임", new Vector2(0.24f, 0.43f), new Vector2(0.76f, 0.53f));
+            restartButton.GetComponent<Image>().color = new Color(0.12f, 0.65f, 0.42f, 0.98f);
+            speedButton = CreateButton(canvas.transform, "SpeedButton", "x1", new Vector2(0.82f, 0.855f), new Vector2(0.98f, 0.915f));
 
             return canvasObject.AddComponent<PrototypeHud>();
         }

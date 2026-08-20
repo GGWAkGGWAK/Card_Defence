@@ -8,6 +8,7 @@ namespace CardDefense.Core
         public event Action<int> GoldChanged;
 
         public int Gold { get; private set; }
+        public int AffordableSummons => config != null && config.summonCost > 0 ? Gold / config.summonCost : 0;
         private GameBalanceConfig config;
 
         public void Configure(GameBalanceConfig balance)

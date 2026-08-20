@@ -14,24 +14,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startingGold: 150
   summonCost: 25
+  baseCardSellGold: 8
+  fusionSellBaseGold: 30
+  fusionSellTierBonus: 8
   baseKillGold: 5
-  rewardGrowthPerRound: 1.04
+  rewardGrowthPerRound: 1.065
   roundDuration: 20
   baseMonstersPerRound: 6
   extraMonstersPerRound: 1
   spawnInterval: 0.65
   defeatMonsterLimit: 80
   baseMonsterHealth: 20
-  healthGrowthPerRound: 1.16
+  healthGrowthPerRound: 1.09
   monsterMoveSpeed: 1.6
-  milestoneHealthBonus: 0.25
+  milestoneHealthBonus: 0.15
+  fastHealthMultiplier: 0.65
+  fastSpeedMultiplier: 1.8
+  fastRewardMultiplier: 1.2
+  tankHealthMultiplier: 2.3
+  tankSpeedMultiplier: 0.7
+  tankRewardMultiplier: 2
+  goldHealthMultiplier: 1.2
+  goldRewardMultiplier: 3
+  bossHealthMultiplier: 10
+  bossSpeedMultiplier: 0.55
+  bossRewardMultiplier: 10
   baseTowerDamage: 6
   towerAttackInterval: 0.55
   towerRange: 3.5
   targetRefreshInterval: 0.25
+  discardedMaterialPowerRatio: 0.1
   baseHandUpgradeCost: 40
-  handUpgradeCostGrowth: 1.32
-  handUpgradeDamageStep: 0.22
+  handUpgradeCostGrowth: 1.26
+  handUpgradeDamageStep: 0.18
   towerSelectionRadius: 0.7
+  cardDragThresholdPixels: 24
   monsterPrewarmCount: 96
   towerPrewarmCount: 24

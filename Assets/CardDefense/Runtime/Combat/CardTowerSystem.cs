@@ -7,6 +7,15 @@ namespace CardDefense.Combat
     {
         private readonly List<CardTower> towers = new List<CardTower>(64);
         public int ActiveCount => towers.Count;
+        public float EstimatedTotalDps
+        {
+            get
+            {
+                float total = 0f;
+                for (int i = 0; i < towers.Count; i++) total += towers[i].EstimatedDps;
+                return total;
+            }
+        }
 
         private void Update()
         {

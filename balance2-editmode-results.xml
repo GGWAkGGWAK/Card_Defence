@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="20" result="Passed" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.0700299">
+  <test-suite type="TestSuite" id="1036" name="Card Defense" fullname="Card Defense" runstate="Runnable" testcasecount="20" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.070030" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties />
+    <test-suite type="Assembly" id="1065" name="CardDefense.Tests.dll" fullname="C:/Users/dltlg/Desktop/GitHub/Card-Defense/Card_Defence/Library/ScriptAssemblies/CardDefense.Tests.dll" runstate="Runnable" testcasecount="20" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.059740" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="27444" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+      </properties>
+      <test-suite type="TestSuite" id="1066" name="CardDefense" fullname="CardDefense" runstate="Runnable" testcasecount="20" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.059211" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1067" name="Tests" fullname="CardDefense.Tests" runstate="Runnable" testcasecount="20" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.056182" total="20" passed="20" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1037" name="MonsterArchetypeRulesTests" fullname="CardDefense.Tests.MonsterArchetypeRulesTests" classname="CardDefense.Tests.MonsterArchetypeRulesTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.027582" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1039" name="ArchetypeMultipliersCreateDistinctRoles" fullname="CardDefense.Tests.MonsterArchetypeRulesTests.ArchetypeMultipliersCreateDistinctRoles" methodname="ArchetypeMultipliersCreateDistinctRoles" classname="CardDefense.Tests.MonsterArchetypeRulesTests" runstate="Runnable" seed="810648141" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.013059" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1038" name="EveryTenthRoundStartsWithBoss" fullname="CardDefense.Tests.MonsterArchetypeRulesTests.EveryTenthRoundStartsWithBoss" methodname="EveryTenthRoundStartsWithBoss" classname="CardDefense.Tests.MonsterArchetypeRulesTests" runstate="Runnable" seed="813503149" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.004044" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1040" name="PokerHandCombatProfileTests" fullname="CardDefense.Tests.PokerHandCombatProfileTests" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.004681" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1041" name="EveryPokerHandHasAValidCombatProfile" fullname="CardDefense.Tests.PokerHandCombatProfileTests.EveryPokerHandHasAValidCombatProfile" methodname="EveryPokerHandHasAValidCombatProfile" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" seed="522508550" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.001134" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1042" name="FusionResultPreservesMostOfFiveCardsBasePower" fullname="CardDefense.Tests.PokerHandCombatProfileTests.FusionResultPreservesMostOfFiveCardsBasePower" methodname="FusionResultPreservesMostOfFiveCardsBasePower" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" seed="1821382579" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000359" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1047" name="SignatureHandsExposeTheirIntendedRoles" fullname="CardDefense.Tests.PokerHandCombatProfileTests.SignatureHandsExposeTheirIntendedRoles" methodname="SignatureHandsExposeTheirIntendedRoles" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" seed="1715599038" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000206" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1046" name="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad" fullname="CardDefense.Tests.PokerHandCombatProfileTests.ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.001821" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1043" name="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad(0.0f,100.0f,0,80,Danger)" fullname="CardDefense.Tests.PokerHandCombatProfileTests.ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad(0.0f,100.0f,0,80,Danger)" methodname="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" seed="1842100673" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000297" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1044" name="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad(100.0f,100.0f,0,80,Stable)" fullname="CardDefense.Tests.PokerHandCombatProfileTests.ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad(100.0f,100.0f,0,80,Stable)" methodname="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" seed="2131583636" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1045" name="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad(1000.0f,100.0f,65,80,Critical)" fullname="CardDefense.Tests.PokerHandCombatProfileTests.ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad(1000.0f,100.0f,65,80,Critical)" methodname="ThreatEvaluatorCombinesDamageCoverageAndMonsterLoad" classname="CardDefense.Tests.PokerHandCombatProfileTests" runstate="Runnable" seed="1530787255" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000044" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1048" name="PokerHandEvaluatorTests" fullname="CardDefense.Tests.PokerHandEvaluatorTests" classname="CardDefense.Tests.PokerHandEvaluatorTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.004745" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1049" name="AceCanBeLowInStraight" fullname="CardDefense.Tests.PokerHandEvaluatorTests.AceCanBeLowInStraight" methodname="AceCanBeLowInStraight" classname="CardDefense.Tests.PokerHandEvaluatorTests" runstate="Runnable" seed="1678478094" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000901" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1051" name="FullHouseBeatsThreeOfAKind" fullname="CardDefense.Tests.PokerHandEvaluatorTests.FullHouseBeatsThreeOfAKind" methodname="FullHouseBeatsThreeOfAKind" classname="CardDefense.Tests.PokerHandEvaluatorTests" runstate="Runnable" seed="692838938" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000220" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1052" name="RoyalFlushHasHigherDamageMultiplierThanStraightFlush" fullname="CardDefense.Tests.PokerHandEvaluatorTests.RoyalFlushHasHigherDamageMultiplierThanStraightFlush" methodname="RoyalFlushHasHigherDamageMultiplierThanStraightFlush" classname="CardDefense.Tests.PokerHandEvaluatorTests" runstate="Runnable" seed="1401411253" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000240" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1050" name="TenToAceSameSuitIsRoyalStraightFlush" fullname="CardDefense.Tests.PokerHandEvaluatorTests.TenToAceSameSuitIsRoyalStraightFlush" methodname="TenToAceSameSuitIsRoyalStraightFlush" classname="CardDefense.Tests.PokerHandEvaluatorTests" runstate="Runnable" seed="1084916704" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000167" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1053" name="PokerMergeRulesTests" fullname="CardDefense.Tests.PokerMergeRulesTests" classname="CardDefense.Tests.PokerMergeRulesTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.002216" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1055" name="SameRankWithDifferentSuitCanMerge" fullname="CardDefense.Tests.PokerMergeRulesTests.SameRankWithDifferentSuitCanMerge" methodname="SameRankWithDifferentSuitCanMerge" classname="CardDefense.Tests.PokerMergeRulesTests" runstate="Runnable" seed="640141356" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000536" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1054" name="SameSuitAndRankBlocksMerge" fullname="CardDefense.Tests.PokerMergeRulesTests.SameSuitAndRankBlocksMerge" methodname="SameSuitAndRankBlocksMerge" classname="CardDefense.Tests.PokerMergeRulesTests" runstate="Runnable" seed="1993396028" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000160" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1056" name="PokerProbabilitySimulatorTests" fullname="CardDefense.Tests.PokerProbabilitySimulatorTests" classname="CardDefense.Tests.PokerProbabilitySimulatorTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.007111" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1058" name="SameSeedProducesSameDistribution" fullname="CardDefense.Tests.PokerProbabilitySimulatorTests.SameSeedProducesSameDistribution" methodname="SameSeedProducesSameDistribution" classname="CardDefense.Tests.PokerProbabilitySimulatorTests" runstate="Runnable" seed="216321786" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.002858" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1057" name="SimulationCountsEveryMergeExactlyOnce" fullname="CardDefense.Tests.PokerProbabilitySimulatorTests.SimulationCountsEveryMergeExactlyOnce" methodname="SimulationCountsEveryMergeExactlyOnce" classname="CardDefense.Tests.PokerProbabilitySimulatorTests" runstate="Runnable" seed="2119666959" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.002488" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1059" name="PokerProgressionServiceTests" fullname="CardDefense.Tests.PokerProgressionServiceTests" classname="CardDefense.Tests.PokerProgressionServiceTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.001897" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1060" name="UpgradeConsumesGoldAndRaisesDamageWithoutLevelLimit" fullname="CardDefense.Tests.PokerProgressionServiceTests.UpgradeConsumesGoldAndRaisesDamageWithoutLevelLimit" methodname="UpgradeConsumesGoldAndRaisesDamageWithoutLevelLimit" classname="CardDefense.Tests.PokerProgressionServiceTests" runstate="Runnable" seed="1454682968" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.001377" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1061" name="RoundBalanceCalculatorTests" fullname="CardDefense.Tests.RoundBalanceCalculatorTests" classname="CardDefense.Tests.RoundBalanceCalculatorTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.003066" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1063" name="AdjustedBalanceIncludesArchetypeHealthAndRewards" fullname="CardDefense.Tests.RoundBalanceCalculatorTests.AdjustedBalanceIncludesArchetypeHealthAndRewards" methodname="AdjustedBalanceIncludesArchetypeHealthAndRewards" classname="CardDefense.Tests.RoundBalanceCalculatorTests" runstate="Runnable" seed="1261943080" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000556" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1062" name="FirstRoundMatchesConfiguredEconomyAndHealth" fullname="CardDefense.Tests.RoundBalanceCalculatorTests.FirstRoundMatchesConfiguredEconomyAndHealth" methodname="FirstRoundMatchesConfiguredEconomyAndHealth" classname="CardDefense.Tests.RoundBalanceCalculatorTests" runstate="Runnable" seed="179789163" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000183" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1064" name="TenthMilestoneRaisesHealthAbovePureRoundGrowth" fullname="CardDefense.Tests.RoundBalanceCalculatorTests.TenthMilestoneRaisesHealthAbovePureRoundGrowth" methodname="TenthMilestoneRaisesHealthAbovePureRoundGrowth" classname="CardDefense.Tests.RoundBalanceCalculatorTests" runstate="Runnable" seed="1961945151" result="Passed" start-time="2026-08-20 05:34:09Z" end-time="2026-08-20 05:34:09Z" duration="0.000141" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -35,8 +35,7 @@ namespace CardDefense.Core
 
         public float GetDamageMultiplier(PokerHand hand)
         {
-            return PokerHandInfo.DamageMultiplier(hand) *
-                   (1f + GetLevel(hand) * config.handUpgradeDamageStep);
+            return CardDefense.Combat.PokerCombatMath.DamageMultiplier(config, hand, GetLevel(hand));
         }
 
         public bool TryUpgrade(PokerHand hand)

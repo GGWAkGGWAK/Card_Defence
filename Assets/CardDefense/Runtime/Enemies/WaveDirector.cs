@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using CardDefense.Core;
 using CardDefense.Pooling;
 using UnityEngine;
@@ -13,13 +14,14 @@ namespace CardDefense.Enemies
         public int CurrentRound { get; private set; }
         public float SecondsToNextRound { get; private set; }
         public bool IsGameOver { get; private set; }
+        public float CurrentRequiredDps { get; private set; }
 
+        private readonly Queue<WaveSpawnBatch> pendingBatches = new Queue<WaveSpawnBatch>(8);
         private GameBalanceConfig config;
         private LoopPath path;
         private MonsterPool pool;
         private MonsterSystem monsters;
         private EconomyService economy;
-        private int remainingToSpawn;
         private float spawnTimer;
         private Action<Monster, bool, int> releaseHandler;
 
@@ -32,6 +34,7 @@ namespace CardDefense.Enemies
             monsters = monsterSystem;
             economy = economyService;
             releaseHandler = HandleMonsterRelease;
+            pendingBatches.Clear();
             SecondsToNextRound = 0f;
         }
 
@@ -46,35 +49,41 @@ namespace CardDefense.Enemies
 
             SecondsToNextRound -= Time.deltaTime;
             if (SecondsToNextRound <= 0f) BeginNextRound();
+            if (pendingBatches.Count == 0) return;
 
-            if (remainingToSpawn <= 0) return;
             spawnTimer -= Time.deltaTime;
             if (spawnTimer > 0f) return;
-
-            SpawnOne();
-            remainingToSpawn--;
-            spawnTimer = config.spawnInterval;
+            WaveSpawnBatch batch = pendingBatches.Peek();
+            SpawnOne(batch.Round, batch.SpawnedCount);
+            batch.SpawnedCount++;
+            batch.Remaining--;
+            if (batch.Remaining <= 0) pendingBatches.Dequeue();
+            spawnTimer = CalculateSpawnInterval(config, batch.TotalCount);
         }
 
         private void BeginNextRound()
         {
             CurrentRound++;
             SecondsToNextRound = config.roundDuration;
-            remainingToSpawn += RoundBalanceCalculator.Calculate(config, CurrentRound).MonsterCount;
+            RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, CurrentRound);
+            pendingBatches.Enqueue(new WaveSpawnBatch(CurrentRound, balance.MonsterCount));
+            CurrentRequiredDps = AdjustedRoundBalanceCalculator.Calculate(config, CurrentRound).RequiredDps;
             RoundChanged?.Invoke(CurrentRound);
         }
 
-        private void SpawnOne()
+        private void SpawnOne(int round, int spawnIndex)
         {
             Monster monster = pool.Get();
             monster.transform.SetParent(null, true);
+            RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, round);
+            MonsterArchetype archetype = MonsterArchetypeRules.Select(round, spawnIndex);
+            MonsterArchetypeStats stats = MonsterArchetypeRules.GetStats(config, archetype);
+            float health = balance.HealthPerMonster * stats.HealthMultiplier;
+            float speed = config.monsterMoveSpeed * stats.SpeedMultiplier;
+            int reward = Mathf.Max(1, Mathf.CeilToInt(balance.RewardPerMonster * stats.RewardMultiplier));
 
-            RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, CurrentRound);
-
-            monster.Spawn(path, balance.HealthPerMonster, config.monsterMoveSpeed,
-                balance.RewardPerMonster, releaseHandler);
+            monster.Spawn(path, archetype, health, speed, reward, releaseHandler);
             monsters.Register(monster);
-
             if (monsters.ActiveCount >= config.defeatMonsterLimit) LoseGame();
         }
 
@@ -91,6 +100,29 @@ namespace CardDefense.Enemies
             IsGameOver = true;
             GameLost?.Invoke();
             Time.timeScale = 0f;
+        }
+
+        public static float CalculateSpawnInterval(GameBalanceConfig balance, int monsterCount)
+        {
+            if (balance == null) return 0.65f;
+            float waveFitInterval = balance.roundDuration * 0.85f / Mathf.Max(1, monsterCount);
+            return Mathf.Max(0.05f, Mathf.Min(balance.spawnInterval, waveFitInterval));
+        }
+
+        private sealed class WaveSpawnBatch
+        {
+            public readonly int Round;
+            public int Remaining;
+            public int SpawnedCount;
+            public readonly int TotalCount;
+
+            public WaveSpawnBatch(int round, int count)
+            {
+                Round = round;
+                Remaining = count;
+                SpawnedCount = 0;
+                TotalCount = count;
+            }
         }
     }
 }
