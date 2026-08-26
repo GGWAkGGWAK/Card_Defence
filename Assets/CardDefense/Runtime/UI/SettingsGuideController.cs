@@ -220,12 +220,12 @@ namespace CardDefense.UI
 
             bgmButton = CreateButton(panel.transform, "BgmToggle", "배경음", new Vector2(0.10f, 0.72f),
                 new Vector2(0.90f, 0.79f), font, new Color(0.1f, 0.52f, 0.55f, 1f));
-            bgmSlider = CreateSlider(panel.transform, "BgmVolume", new Vector2(0.14f, 0.665f),
-                new Vector2(0.86f, 0.705f), settings.BgmVolume);
+            bgmSlider = CreateSlider(panel.transform, "BgmVolume", new Vector2(0.18f, 0.672f),
+                new Vector2(0.82f, 0.696f), settings.BgmVolume);
             sfxButton = CreateButton(panel.transform, "SfxToggle", "효과음", new Vector2(0.10f, 0.57f),
                 new Vector2(0.90f, 0.64f), font, new Color(0.1f, 0.52f, 0.55f, 1f));
-            sfxSlider = CreateSlider(panel.transform, "SfxVolume", new Vector2(0.14f, 0.515f),
-                new Vector2(0.86f, 0.555f), settings.SfxVolume);
+            sfxSlider = CreateSlider(panel.transform, "SfxVolume", new Vector2(0.18f, 0.522f),
+                new Vector2(0.82f, 0.546f), settings.SfxVolume);
             vibrationButton = CreateButton(panel.transform, "VibrationToggle", "진동", new Vector2(0.10f, 0.42f),
                 new Vector2(0.90f, 0.49f), font, new Color(0.1f, 0.52f, 0.55f, 1f));
             performanceButton = CreateButton(panel.transform, "PerformanceToggle", "성능",
@@ -310,8 +310,8 @@ namespace CardDefense.UI
             GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(root.transform, false);
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
-            backgroundRect.anchorMin = new Vector2(0f, 0.28f);
-            backgroundRect.anchorMax = new Vector2(1f, 0.72f);
+            backgroundRect.anchorMin = new Vector2(0f, 0.34f);
+            backgroundRect.anchorMax = new Vector2(1f, 0.66f);
             backgroundRect.offsetMin = Vector2.zero;
             backgroundRect.offsetMax = Vector2.zero;
             background.GetComponent<Image>().color = new Color(0.02f, 0.12f, 0.14f, 1f);
@@ -319,12 +319,17 @@ namespace CardDefense.UI
             GameObject fillArea = new GameObject("FillArea", typeof(RectTransform));
             fillArea.transform.SetParent(root.transform, false);
             RectTransform fillAreaRect = fillArea.GetComponent<RectTransform>();
-            fillAreaRect.anchorMin = new Vector2(0f, 0.28f);
-            fillAreaRect.anchorMax = new Vector2(1f, 0.72f);
+            fillAreaRect.anchorMin = new Vector2(0f, 0.34f);
+            fillAreaRect.anchorMax = new Vector2(1f, 0.66f);
             fillAreaRect.offsetMin = new Vector2(4f, 0f);
             fillAreaRect.offsetMax = new Vector2(-4f, 0f);
             GameObject fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fill.transform.SetParent(fillArea.transform, false);
+            RectTransform fillRect = fill.GetComponent<RectTransform>();
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
             fill.GetComponent<Image>().color = new Color(0.12f, 0.88f, 0.86f, 1f);
 
             GameObject handleArea = new GameObject("HandleArea", typeof(RectTransform));
@@ -337,7 +342,7 @@ namespace CardDefense.UI
             GameObject handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
             handle.transform.SetParent(handleArea.transform, false);
             RectTransform handleRect = handle.GetComponent<RectTransform>();
-            handleRect.sizeDelta = new Vector2(28f, 28f);
+            handleRect.sizeDelta = new Vector2(22f, 34f);
             handle.GetComponent<Image>().color = new Color(1f, 0.78f, 0.22f, 1f);
 
             Slider slider = root.GetComponent<Slider>();

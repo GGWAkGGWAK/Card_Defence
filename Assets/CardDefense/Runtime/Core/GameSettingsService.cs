@@ -15,6 +15,7 @@ namespace CardDefense.Core
         public bool VibrationEnabled { get; private set; }
         public float BgmVolume { get; private set; }
         public float SfxVolume { get; private set; }
+        public bool IsBgmPlaying => bgmSource != null && bgmSource.isPlaying;
 
 #if UNITY_EDITOR
         public static string EditorSettingsPrefixOverride;
@@ -62,7 +63,10 @@ namespace CardDefense.Core
             bgmSource = gameObject.AddComponent<AudioSource>();
             bgmSource.loop = true;
             bgmSource.playOnAwake = false;
-            bgmSource.volume = 0.45f * BgmVolume;
+            bgmSource.spatialBlend = 0f;
+            bgmSource.priority = 32;
+            bgmSource.ignoreListenerPause = true;
+            bgmSource.volume = 0.62f * BgmVolume;
             bgmSource.clip = CreateAmbientLoop();
             sfxSource = gameObject.AddComponent<AudioSource>();
             sfxSource.playOnAwake = false;
@@ -121,7 +125,7 @@ namespace CardDefense.Core
             BgmVolume = Mathf.Clamp01(volume);
             PlayerPrefs.SetFloat(Prefix + "BgmVolume", BgmVolume);
             PlayerPrefs.Save();
-            if (bgmSource != null) bgmSource.volume = 0.45f * BgmVolume;
+            if (bgmSource != null) bgmSource.volume = 0.62f * BgmVolume;
         }
 
         public void SetSfxVolume(float volume)
@@ -263,7 +267,7 @@ namespace CardDefense.Core
                 sample += Mathf.Sin(2f * Mathf.PI * root * 1.5f * time) * pluck * 0.05f;
                 sample += Mathf.Sin(2f * Mathf.PI * 55f * time) * (0.035f + pad * 0.015f);
                 sample += Mathf.Sin(2f * Mathf.PI * (root * 0.5f) * time) * 0.035f;
-                data[i] = sample;
+                data[i] = Mathf.Clamp(sample * 2.15f, -0.82f, 0.82f);
             }
             AudioClip clip = AudioClip.Create("PrototypeAmbient", count, 1, sampleRate, false);
             clip.SetData(data, 0);

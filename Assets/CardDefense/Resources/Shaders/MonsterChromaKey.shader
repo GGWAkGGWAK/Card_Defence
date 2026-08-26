@@ -4,9 +4,9 @@ Shader "CardDefense/MonsterChromaKey"
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
-        _KeyColor ("Key Color", Color) = (1,0,1,1)
-        _Tolerance ("Tolerance", Range(0,1)) = 0.13
-        _Softness ("Softness", Range(0.001,0.5)) = 0.12
+        _KeyColor ("Key Color", Color) = (0.94,0.045,0.89,1)
+        _Tolerance ("Tolerance", Range(0,1)) = 0.22
+        _Softness ("Softness", Range(0.001,0.5)) = 0.10
     }
     SubShader
     {
@@ -63,7 +63,10 @@ Shader "CardDefense/MonsterChromaKey"
             {
                 fixed4 color = tex2D(_MainTex, input.uv) * input.color;
                 float keyDistance = distance(color.rgb, _KeyColor.rgb);
-                color.a *= smoothstep(_Tolerance, _Tolerance + _Softness, keyDistance);
+                float pinkDominance = min(color.r, color.b) - color.g;
+                float chromaMask = smoothstep(0.48, 0.68, pinkDominance);
+                float distanceMask = 1.0 - smoothstep(_Tolerance, _Tolerance + _Softness, keyDistance);
+                color.a *= 1.0 - max(chromaMask, distanceMask);
                 return color;
             }
             ENDCG
