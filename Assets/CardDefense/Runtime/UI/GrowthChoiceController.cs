@@ -79,5 +79,24 @@ namespace CardDefense.UI
         {
             if (panel != null) panel.SetActive(false);
         }
+
+        public GrowthChoiceSnapshot CaptureSnapshot()
+        {
+            return new GrowthChoiceSnapshot { OfferedRound = offeredRound, IsVisible = IsChoiceVisible };
+        }
+
+        public void RestoreSnapshot(GrowthChoiceSnapshot snapshot)
+        {
+            offeredRound = Mathf.Max(0, snapshot.OfferedRound);
+            if (snapshot.IsVisible && offeredRound > 0)
+            {
+                title.text = "ROUND " + offeredRound + " 성장 선택";
+                panel.SetActive(true);
+            }
+            else
+            {
+                panel.SetActive(false);
+            }
+        }
     }
 }

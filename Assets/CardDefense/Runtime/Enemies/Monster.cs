@@ -18,6 +18,7 @@ namespace CardDefense.Enemies
         private int reward;
         private Action<Monster, bool, int> releaseCallback;
         private MonsterHealthBar healthBar;
+        private PrototypeVisual visual;
 
         public void Spawn(LoopPath loopPath, MonsterArchetype archetype, float maxHealth,
             float speed, int killReward,
@@ -35,7 +36,7 @@ namespace CardDefense.Enemies
             transform.position = path.GetPosition(0f);
             gameObject.SetActive(true);
 
-            PrototypeVisual visual = GetComponent<PrototypeVisual>();
+            visual = GetComponent<PrototypeVisual>();
             if (visual != null) visual.SetMonsterStyle(archetype);
             if (healthBar == null)
             {
@@ -52,10 +53,35 @@ namespace CardDefense.Enemies
             transform.position = path.GetPosition(progress);
         }
 
+        public MonsterSnapshot CaptureSnapshot()
+        {
+            return new MonsterSnapshot
+            {
+                Archetype = Archetype,
+                Health = Health,
+                MaxHealth = MaxHealth,
+                MoveSpeed = moveSpeed,
+                Progress = progress - Mathf.Floor(progress),
+                Reward = reward
+            };
+        }
+
+        public void Restore(LoopPath loopPath, MonsterSnapshot snapshot,
+            Action<Monster, bool, int> callback)
+        {
+            Spawn(loopPath, snapshot.Archetype, Mathf.Max(1f, snapshot.MaxHealth),
+                Mathf.Max(0.01f, snapshot.MoveSpeed), Mathf.Max(0, snapshot.Reward), callback);
+            Health = Mathf.Clamp(snapshot.Health, 0.01f, MaxHealth);
+            progress = snapshot.Progress - Mathf.Floor(snapshot.Progress);
+            transform.position = path.GetPosition(progress);
+            if (healthBar != null) healthBar.SetHealth(Health / MaxHealth);
+        }
+
         public void TakeDamage(float amount)
         {
             if (!IsAlive || amount <= 0f) return;
             Health -= amount;
+            if (visual != null) visual.FlashHit();
             if (healthBar != null) healthBar.SetHealth(Health / MaxHealth);
             if (Health <= 0f) RequestRelease(true);
         }

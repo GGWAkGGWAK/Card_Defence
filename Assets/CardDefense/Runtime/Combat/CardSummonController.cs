@@ -321,6 +321,40 @@ namespace CardDefense.Combat
                        : string.Empty);
         }
 
+        public List<CardTowerSnapshot> CaptureTowers()
+        {
+            List<CardTowerSnapshot> snapshots = new List<CardTowerSnapshot>(placedBySlot.Length);
+            for (int i = 0; i < placedBySlot.Length; i++)
+            {
+                CardTower tower = placedBySlot[i];
+                if (tower == null) continue;
+                snapshots.Add(new CardTowerSnapshot
+                {
+                    SlotIndex = tower.SlotIndex,
+                    Card = tower.Card,
+                    Hand = tower.Hand,
+                    IsFusionResult = tower.IsFusionResult,
+                    BaseDamage = tower.SavedBaseDamage,
+                    FusionCoreCardCount = tower.FusionCoreCardCount
+                });
+            }
+            return snapshots;
+        }
+
+        public void RestoreTowers(List<CardTowerSnapshot> snapshots)
+        {
+            if (snapshots == null) return;
+            for (int i = 0; i < snapshots.Count; i++)
+            {
+                CardTowerSnapshot snapshot = snapshots[i];
+                if (snapshot.SlotIndex < 0 || snapshot.SlotIndex >= placedBySlot.Length ||
+                    placedBySlot[snapshot.SlotIndex] != null) continue;
+                SpawnTower(snapshot.Card, snapshot.Hand, snapshot.IsFusionResult, snapshot.SlotIndex,
+                    snapshot.BaseDamage, snapshot.FusionCoreCardCount);
+            }
+            SelectionChanged?.Invoke();
+        }
+
         public PokerHand GetMergePreviewHand()
         {
             if (selected.Count != 5) return PokerHand.High;

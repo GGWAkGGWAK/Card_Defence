@@ -11,6 +11,8 @@ namespace CardDefense.Enemies
         public event Action<int> RoundChanged;
         public event Action GameLost;
         public event Action<int> MonsterDefeated;
+        public event Action ChallengeBossDefeated;
+        public event Action ChallengeBossSpawned;
 
         public int CurrentRound { get; private set; }
         public float SecondsToNextRound { get; private set; }
@@ -26,6 +28,10 @@ namespace CardDefense.Enemies
         private float spawnTimer;
         private Action<Monster, bool, int> releaseHandler;
         private RunModifierService modifiers;
+        private bool restoredState;
+        private Monster challengeBoss;
+
+        public bool HasActiveChallengeBoss => challengeBoss != null && challengeBoss.IsAlive;
 
         public void Configure(GameBalanceConfig balance, LoopPath loopPath, MonsterPool monsterPool,
             MonsterSystem monsterSystem, EconomyService economyService)
@@ -47,7 +53,7 @@ namespace CardDefense.Enemies
 
         private void Start()
         {
-            BeginNextRound();
+            if (!restoredState) BeginNextRound();
         }
 
         private void Update()
@@ -97,6 +103,12 @@ namespace CardDefense.Enemies
         private void HandleMonsterRelease(Monster monster, bool defeated, int reward)
         {
             monsters.Unregister(monster);
+            bool wasChallengeBoss = monster == challengeBoss;
+            if (wasChallengeBoss)
+            {
+                challengeBoss = null;
+                if (defeated) ChallengeBossDefeated?.Invoke();
+            }
             if (defeated)
             {
                 int adjustedReward = modifiers != null ? modifiers.ApplyKillGold(reward) : reward;
@@ -104,6 +116,22 @@ namespace CardDefense.Enemies
                 MonsterDefeated?.Invoke(adjustedReward);
             }
             pool.Release(monster);
+        }
+
+        public bool TrySpawnChallengeBoss()
+        {
+            if (IsGameOver || HasActiveChallengeBoss || config == null || pool == null) return false;
+            RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, Mathf.Max(1, CurrentRound));
+            Monster monster = pool.Get();
+            monster.transform.SetParent(null, true);
+            float health = balance.HealthPerMonster * config.bossQuestHealthMultiplier;
+            float speed = config.monsterMoveSpeed * config.bossSpeedMultiplier;
+            monster.Spawn(path, MonsterArchetype.Boss, health, speed, 0, releaseHandler);
+            challengeBoss = monster;
+            monsters.Register(monster);
+            ChallengeBossSpawned?.Invoke();
+            if (monsters.ActiveCount >= config.defeatMonsterLimit) LoseGame();
+            return true;
         }
 
         private void LoseGame()
@@ -121,6 +149,60 @@ namespace CardDefense.Enemies
             return Mathf.Max(0.05f, Mathf.Min(balance.spawnInterval, waveFitInterval));
         }
 
+        public WaveDirectorSnapshot CaptureSnapshot()
+        {
+            WaveDirectorSnapshot snapshot = new WaveDirectorSnapshot
+            {
+                CurrentRound = CurrentRound,
+                SecondsToNextRound = SecondsToNextRound,
+                SpawnTimer = spawnTimer
+            };
+            foreach (WaveSpawnBatch batch in pendingBatches)
+            {
+                snapshot.PendingBatches.Add(new WaveSpawnBatchSnapshot
+                {
+                    Round = batch.Round,
+                    Remaining = batch.Remaining,
+                    SpawnedCount = batch.SpawnedCount,
+                    TotalCount = batch.TotalCount
+                });
+            }
+            return snapshot;
+        }
+
+        public void RestoreSnapshot(WaveDirectorSnapshot snapshot, List<MonsterSnapshot> monsterSnapshots)
+        {
+            if (snapshot == null) return;
+            CurrentRound = Mathf.Max(1, snapshot.CurrentRound);
+            SecondsToNextRound = Mathf.Clamp(snapshot.SecondsToNextRound, 0.01f, config.roundDuration);
+            spawnTimer = Mathf.Max(0f, snapshot.SpawnTimer);
+            CurrentRequiredDps = AdjustedRoundBalanceCalculator.Calculate(config, CurrentRound).RequiredDps;
+            pendingBatches.Clear();
+            if (snapshot.PendingBatches != null)
+            {
+                for (int i = 0; i < snapshot.PendingBatches.Count; i++)
+                {
+                    WaveSpawnBatchSnapshot saved = snapshot.PendingBatches[i];
+                    if (saved.Remaining <= 0) continue;
+                    pendingBatches.Enqueue(new WaveSpawnBatch(saved.Round, saved.Remaining,
+                        saved.SpawnedCount, saved.TotalCount));
+                }
+            }
+            if (monsterSnapshots != null)
+            {
+                for (int i = 0; i < monsterSnapshots.Count; i++)
+                {
+                    Monster monster = pool.Get();
+                    monster.transform.SetParent(null, true);
+                    monster.Restore(path, monsterSnapshots[i], releaseHandler);
+                    monsters.Register(monster);
+                    if (monsterSnapshots[i].Archetype == MonsterArchetype.Boss &&
+                        monsterSnapshots[i].Reward <= 0) challengeBoss = monster;
+                }
+            }
+            restoredState = true;
+        }
+
         private sealed class WaveSpawnBatch
         {
             public readonly int Round;
@@ -134,6 +216,14 @@ namespace CardDefense.Enemies
                 Remaining = count;
                 SpawnedCount = 0;
                 TotalCount = count;
+            }
+
+            public WaveSpawnBatch(int round, int remaining, int spawnedCount, int totalCount)
+            {
+                Round = round;
+                Remaining = remaining;
+                SpawnedCount = spawnedCount;
+                TotalCount = Mathf.Max(remaining + spawnedCount, totalCount);
             }
         }
     }

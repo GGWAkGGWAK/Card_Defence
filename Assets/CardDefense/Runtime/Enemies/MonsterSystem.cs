@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using CardDefense.Core;
 using UnityEngine;
 
 namespace CardDefense.Enemies
@@ -97,6 +98,14 @@ namespace CardDefense.Enemies
             health = 0f;
             maxHealth = 0f;
             return false;
+        }
+
+        public List<MonsterSnapshot> CaptureMonsters()
+        {
+            List<MonsterSnapshot> snapshots = new List<MonsterSnapshot>(active.Count);
+            for (int i = 0; i < active.Count; i++)
+                if (active[i].IsAlive) snapshots.Add(active[i].CaptureSnapshot());
+            return snapshots;
         }
     }
 }

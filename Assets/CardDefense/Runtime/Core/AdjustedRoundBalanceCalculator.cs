@@ -22,7 +22,7 @@ namespace CardDefense.Core
         {
             RoundBalanceSnapshot baseBalance = RoundBalanceCalculator.Calculate(config, round);
             double totalHealth = 0d;
-            int potentialGold = 0;
+            long potentialGold = 0;
             float bossHealth = 0f;
             int bossReward = 0;
 
@@ -30,11 +30,13 @@ namespace CardDefense.Core
             {
                 MonsterArchetype archetype = MonsterArchetypeRules.Select(baseBalance.Round, spawnIndex);
                 MonsterArchetypeStats stats = MonsterArchetypeRules.GetStats(config, archetype);
-                float health = baseBalance.HealthPerMonster * stats.HealthMultiplier;
-                int reward = Mathf.Max(1,
-                    Mathf.CeilToInt(baseBalance.RewardPerMonster * stats.RewardMultiplier));
+                double rawHealth = (double)baseBalance.HealthPerMonster * stats.HealthMultiplier;
+                float health = rawHealth >= float.MaxValue ? float.MaxValue : (float)rawHealth;
+                double rawReward = (double)baseBalance.RewardPerMonster * stats.RewardMultiplier;
+                int reward = rawReward >= int.MaxValue ? int.MaxValue : Mathf.Max(1, Mathf.CeilToInt((float)rawReward));
                 totalHealth += health;
                 potentialGold += reward;
+                if (potentialGold > int.MaxValue) potentialGold = int.MaxValue;
                 if (archetype != MonsterArchetype.Boss) continue;
                 bossHealth = health;
                 bossReward = reward;
@@ -46,7 +48,7 @@ namespace CardDefense.Core
                 Round = baseBalance.Round,
                 MonsterCount = baseBalance.MonsterCount,
                 TotalHealth = safeTotalHealth,
-                PotentialGold = potentialGold,
+                PotentialGold = (int)potentialGold,
                 RequiredDps = safeTotalHealth / Mathf.Max(0.01f, config.roundDuration),
                 BossHealth = bossHealth,
                 BossReward = bossReward

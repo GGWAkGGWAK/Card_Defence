@@ -77,5 +77,41 @@ namespace CardDefense.Tests
             Assert.Greater(result.PotentialGold, 0);
             Object.DestroyImmediate(config);
         }
+
+        [Test]
+        public void EndlessCurveRemainsFiniteAndMonotonicThroughRoundFiveHundred()
+        {
+            GameBalanceConfig config = ScriptableObject.CreateInstance<GameBalanceConfig>();
+            float previousHealth = 0f;
+            float previousDps = 0f;
+            for (int round = 1; round <= 500; round++)
+            {
+                RoundBalanceSnapshot snapshot = RoundBalanceCalculator.Calculate(config, round);
+                Assert.IsFalse(float.IsNaN(snapshot.HealthPerMonster), "Health NaN at round " + round);
+                Assert.IsFalse(float.IsInfinity(snapshot.HealthPerMonster), "Health overflow at round " + round);
+                Assert.IsFalse(float.IsNaN(snapshot.RequiredDps), "DPS NaN at round " + round);
+                Assert.IsFalse(float.IsInfinity(snapshot.RequiredDps), "DPS overflow at round " + round);
+                Assert.GreaterOrEqual(snapshot.HealthPerMonster, previousHealth);
+                Assert.GreaterOrEqual(snapshot.RequiredDps, previousDps);
+                Assert.Greater(snapshot.RewardPerMonster, 0);
+                Assert.Greater(snapshot.PotentialGold, 0);
+                previousHealth = snapshot.HealthPerMonster;
+                previousDps = snapshot.RequiredDps;
+            }
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void LateGameGoldGrowthStaysBelowHealthPressureGrowth()
+        {
+            GameBalanceConfig config = ScriptableObject.CreateInstance<GameBalanceConfig>();
+            config.rewardGrowthPerRound = 1.025f;
+            RoundBalanceSnapshot round40 = RoundBalanceCalculator.Calculate(config, 40);
+            RoundBalanceSnapshot round80 = RoundBalanceCalculator.Calculate(config, 80);
+
+            Assert.Less((float)round80.RewardPerMonster / round40.RewardPerMonster, 3f);
+            Assert.Greater(round80.HealthPerMonster / round40.HealthPerMonster, 10f);
+            Object.DestroyImmediate(config);
+        }
     }
 }

@@ -21,6 +21,7 @@ namespace CardDefense.Combat
         public float EstimatedDps => CurrentDamage * profile.ExpectedDamageMultiplier / attackInterval;
         public string CombatTrait => profile.KoreanTrait;
         public int FusionCoreCardCount { get; private set; }
+        public float SavedBaseDamage => baseDamage;
 
         private MonsterSystem monsters;
         private Monster target;
@@ -127,6 +128,7 @@ namespace CardDefense.Combat
 
         private void AttackTargets()
         {
+            if (visual != null) visual.PlayAttackPulse();
             Monster first = null;
             Monster second = null;
             Monster third = null;
@@ -150,7 +152,11 @@ namespace CardDefense.Combat
                 if (profile.SplashRadius > 0f)
                     monsters.DamageInRadius(hitPosition, profile.SplashRadius,
                         damage * profile.SplashDamageMultiplier, hit);
-                if (effects != null) effects.PlayBeam(transform.position, hitPosition, critical);
+                if (effects != null)
+                {
+                    effects.PlayBeam(transform.position, hitPosition, critical, Hand);
+                    effects.PlayDamageNumber(hitPosition, dealtDamage, critical);
+                }
 
                 if (i == 0) first = hit;
                 else if (i == 1) second = hit;

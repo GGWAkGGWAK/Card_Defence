@@ -73,5 +73,30 @@ namespace CardDefense.Core
                    "G · 소환 " + CardsSummoned + " · 합성 " + HandsMerged + " · " +
                    minutes.ToString("00") + ":" + seconds.ToString("00");
         }
+
+        public RunStatisticsSnapshot CaptureSnapshot()
+        {
+            return new RunStatisticsSnapshot
+            {
+                HighestRound = HighestRound,
+                MonstersDefeated = MonstersDefeated,
+                GoldEarned = GoldEarned,
+                CardsSummoned = CardsSummoned,
+                HandsMerged = HandsMerged,
+                UpgradesPurchased = UpgradesPurchased,
+                ElapsedGameSeconds = ElapsedGameSeconds
+            };
+        }
+
+        public void RestoreSnapshot(RunStatisticsSnapshot snapshot)
+        {
+            HighestRound = Mathf.Max(0, snapshot.HighestRound);
+            MonstersDefeated = Mathf.Max(0, snapshot.MonstersDefeated);
+            GoldEarned = Mathf.Max(0, snapshot.GoldEarned);
+            CardsSummoned = Mathf.Max(0, snapshot.CardsSummoned);
+            HandsMerged = Mathf.Max(0, snapshot.HandsMerged);
+            UpgradesPurchased = Mathf.Max(0, snapshot.UpgradesPurchased);
+            ElapsedGameSeconds = Mathf.Max(0f, snapshot.ElapsedGameSeconds);
+        }
     }
 }

@@ -46,5 +46,20 @@ namespace CardDefense.Core
             HandUpgraded?.Invoke(hand, levels[(int)hand]);
             return true;
         }
+
+        public int[] CaptureLevels()
+        {
+            int[] snapshot = new int[levels.Length];
+            Array.Copy(levels, snapshot, levels.Length);
+            return snapshot;
+        }
+
+        public void RestoreLevels(int[] snapshot)
+        {
+            Array.Clear(levels, 0, levels.Length);
+            if (snapshot == null) return;
+            int count = Math.Min(levels.Length, snapshot.Length);
+            for (int i = 0; i < count; i++) levels[i] = Mathf.Max(0, snapshot[i]);
+        }
     }
 }
