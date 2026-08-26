@@ -86,6 +86,9 @@ namespace CardDefense.Core
         private void Awake()
         {
             Time.timeScale = 1f;
+            SafeAreaFitter safeArea = hud.GetComponentInChildren<SafeAreaFitter>(true);
+            Transform uiRoot = safeArea != null ? safeArea.Content : hud.transform;
+            VisualAssetLibrary.CreateArenaBackground();
             economy.Configure(config);
             progression.Configure(config, economy);
             RunModifierService modifiers = gameObject.AddComponent<RunModifierService>();
@@ -104,10 +107,33 @@ namespace CardDefense.Core
             GrowthChoiceController growth = hud.gameObject.AddComponent<GrowthChoiceController>();
             growth.Configure(growthPanel, growthTitleText, growthAttackButton, growthGoldButton,
                 growthSummonButton, waves, modifiers);
+            BossQuestController bossQuest = hud.gameObject.AddComponent<BossQuestController>();
+            bossQuest.Configure(uiRoot, messageText != null ? messageText.font : null,
+                config, waves, economy, modifiers);
+            RunSaveService runSave = gameObject.AddComponent<RunSaveService>();
+            runSave.Configure(economy, progression, modifiers, statistics, summon, monsters, waves, growth,
+                bossQuest);
             hud.Configure(goldText, roundText, monsterText, messageText, selectionText, threatText,
                 summonButton, mergeButton, upgradeButton, sellButton, restartButton,
                 speedButton,
-                economy, waves, monsters, summon, towers, config, statistics, profile, growth, modifiers);
+                economy, waves, monsters, summon, towers, config, statistics, profile, growth, modifiers,
+                runSave);
+            StartupMenuController startup = hud.gameObject.AddComponent<StartupMenuController>();
+            startup.Configure(uiRoot, messageText != null ? messageText.font : null, runSave, profile);
+            TutorialController tutorial = hud.gameObject.AddComponent<TutorialController>();
+            tutorial.Configure(uiRoot, messageText != null ? messageText.font : null, startup,
+                summon, progression, hud, summonButton, mergeButton, upgradeButton, speedButton);
+            GameSettingsService settings = gameObject.AddComponent<GameSettingsService>();
+            settings.Configure(summon, progression, waves, growth, effects);
+            PerformanceManager performance = gameObject.AddComponent<PerformanceManager>();
+            performance.Configure(effects);
+            SettingsGuideController settingsUi = hud.gameObject.AddComponent<SettingsGuideController>();
+            settingsUi.Configure(uiRoot, messageText != null ? messageText.font : null, startup,
+                settings, performance);
+            PresentationEffectController presentation = hud.gameObject.AddComponent<PresentationEffectController>();
+            presentation.Configure(uiRoot, messageText != null ? messageText.font : null, summon, waves);
+            UiThemeController theme = hud.gameObject.AddComponent<UiThemeController>();
+            theme.Configure(uiRoot);
         }
     }
 }

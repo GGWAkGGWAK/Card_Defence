@@ -51,7 +51,8 @@ namespace CardDefense.Editor
         {
             PlayerSettings.companyName = "Card Defense Studio";
             PlayerSettings.productName = "Card Defense";
-            PlayerSettings.bundleVersion = "0.1.0";
+            PlayerSettings.bundleVersion = "0.2.0";
+            PlayerSettings.Android.bundleVersionCode = 2;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.carddefense.game");
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
@@ -59,7 +60,19 @@ namespace CardDefense.Editor
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
             PlayerSettings.Android.androidIsGame = true;
+            PlayerSettings.defaultScreenWidth = 540;
+            PlayerSettings.defaultScreenHeight = 960;
+            PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+            PlayerSettings.resizableWindow = true;
+            PlayerSettings.gcIncremental = true;
+            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.High);
             QualitySettings.vSyncCount = 0;
+
+            Texture2D icon = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/CardDefense/Art/Brand/CardDefenseIcon-v1.png");
+            if (icon != null)
+                PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.Android,
+                    new[] { icon }, IconKind.Application);
 
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
         }
@@ -68,11 +81,31 @@ namespace CardDefense.Editor
         {
             string path = Root + "/GameBalanceConfig.asset";
             GameBalanceConfig config = AssetDatabase.LoadAssetAtPath<GameBalanceConfig>(path);
-            if (config != null) return config;
+            if (config != null)
+            {
+                ApplyCurrentBalance(config);
+                EditorUtility.SetDirty(config);
+                return config;
+            }
 
             config = ScriptableObject.CreateInstance<GameBalanceConfig>();
+            ApplyCurrentBalance(config);
             AssetDatabase.CreateAsset(config, path);
             return config;
+        }
+
+        private static void ApplyCurrentBalance(GameBalanceConfig config)
+        {
+            config.rewardGrowthPerRound = 1.025f;
+            config.goldRewardMultiplier = 2.25f;
+            config.bossRewardMultiplier = 5f;
+            config.bossQuestInitialCooldown = 25f;
+            config.bossQuestCooldown = 75f;
+            config.bossQuestTimeLimit = 25f;
+            config.bossQuestHealthMultiplier = 16f;
+            config.bossQuestBaseGold = 80;
+            config.bossQuestGoldPerRound = 5;
+            config.bossQuestAttackBonus = 0.03f;
         }
 
         private static Monster CreateMonsterPrefab()
@@ -110,6 +143,7 @@ namespace CardDefense.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             Camera camera = new GameObject("Main Camera").AddComponent<Camera>();
+            camera.gameObject.AddComponent<AudioListener>();
             camera.tag = "MainCamera";
             camera.orthographic = true;
             camera.orthographicSize = 7.3f;
@@ -230,28 +264,38 @@ namespace CardDefense.Editor
             GameObject eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
             eventSystem.transform.SetParent(canvasObject.transform, false);
 
-            gold = CreateText(canvas.transform, "GoldText", "GOLD 100", 44, TextAnchor.MiddleLeft,
+            GameObject safeAreaObject = new GameObject("SafeAreaRoot", typeof(RectTransform),
+                typeof(SafeAreaFitter));
+            safeAreaObject.transform.SetParent(canvas.transform, false);
+            RectTransform safeRect = safeAreaObject.GetComponent<RectTransform>();
+            safeRect.anchorMin = Vector2.zero;
+            safeRect.anchorMax = Vector2.one;
+            safeRect.offsetMin = Vector2.zero;
+            safeRect.offsetMax = Vector2.zero;
+            Transform uiRoot = safeAreaObject.transform;
+
+            gold = CreateText(uiRoot, "GoldText", "GOLD 100", 44, TextAnchor.MiddleLeft,
                 new Vector2(0.04f, 0.92f), new Vector2(0.38f, 0.985f), Color.white);
-            round = CreateText(canvas.transform, "RoundText", "ROUND 1", 38, TextAnchor.MiddleCenter,
+            round = CreateText(uiRoot, "RoundText", "ROUND 1", 38, TextAnchor.MiddleCenter,
                 new Vector2(0.34f, 0.92f), new Vector2(0.70f, 0.985f), Color.white);
-            alive = CreateText(canvas.transform, "MonsterText", "MONSTERS 0", 38, TextAnchor.MiddleRight,
+            alive = CreateText(uiRoot, "MonsterText", "MONSTERS 0", 38, TextAnchor.MiddleRight,
                 new Vector2(0.66f, 0.92f), new Vector2(0.96f, 0.985f), new Color(1f, 0.45f, 0.42f));
-            message = CreateText(canvas.transform, "MessageText", "카드를 소환해 방어를 시작하세요", 32, TextAnchor.MiddleCenter,
+            message = CreateText(uiRoot, "MessageText", "카드를 소환해 방어를 시작하세요", 32, TextAnchor.MiddleCenter,
                 new Vector2(0.05f, 0.165f), new Vector2(0.95f, 0.215f), Color.white);
-            selection = CreateText(canvas.transform, "SelectionText", "카드를 터치해 선택", 27, TextAnchor.MiddleCenter,
+            selection = CreateText(uiRoot, "SelectionText", "카드를 터치해 선택", 27, TextAnchor.MiddleCenter,
                 new Vector2(0.04f, 0.095f), new Vector2(0.96f, 0.165f), new Color(1f, 0.86f, 0.35f));
-            threat = CreateText(canvas.transform, "ThreatText", "전투력 계산 중", 30, TextAnchor.MiddleLeft,
+            threat = CreateText(uiRoot, "ThreatText", "전투력 계산 중", 30, TextAnchor.MiddleLeft,
                 new Vector2(0.04f, 0.855f), new Vector2(0.80f, 0.915f), new Color(1f, 0.85f, 0.25f));
-            summonButton = CreateButton(canvas.transform, "SummonButton", "소환", new Vector2(0.01f, 0.015f), new Vector2(0.245f, 0.09f));
-            mergeButton = CreateButton(canvas.transform, "MergeButton", "5장 합성", new Vector2(0.255f, 0.015f), new Vector2(0.49f, 0.09f));
-            upgradeButton = CreateButton(canvas.transform, "UpgradeButton", "강화", new Vector2(0.51f, 0.015f), new Vector2(0.745f, 0.09f));
-            sellButton = CreateButton(canvas.transform, "SellButton", "판매", new Vector2(0.755f, 0.015f), new Vector2(0.99f, 0.09f));
-            restartButton = CreateButton(canvas.transform, "RestartButton", "새 게임", new Vector2(0.24f, 0.43f), new Vector2(0.76f, 0.53f));
+            summonButton = CreateButton(uiRoot, "SummonButton", "소환", new Vector2(0.01f, 0.015f), new Vector2(0.245f, 0.09f));
+            mergeButton = CreateButton(uiRoot, "MergeButton", "5장 합성", new Vector2(0.255f, 0.015f), new Vector2(0.49f, 0.09f));
+            upgradeButton = CreateButton(uiRoot, "UpgradeButton", "강화", new Vector2(0.51f, 0.015f), new Vector2(0.745f, 0.09f));
+            sellButton = CreateButton(uiRoot, "SellButton", "판매", new Vector2(0.755f, 0.015f), new Vector2(0.99f, 0.09f));
+            restartButton = CreateButton(uiRoot, "RestartButton", "새 게임", new Vector2(0.24f, 0.43f), new Vector2(0.76f, 0.53f));
             restartButton.GetComponent<Image>().color = new Color(0.12f, 0.65f, 0.42f, 0.98f);
-            speedButton = CreateButton(canvas.transform, "SpeedButton", "x1", new Vector2(0.82f, 0.855f), new Vector2(0.98f, 0.915f));
+            speedButton = CreateButton(uiRoot, "SpeedButton", "x1", new Vector2(0.82f, 0.855f), new Vector2(0.98f, 0.915f));
 
             growthPanel = new GameObject("GrowthChoicePanel", typeof(RectTransform), typeof(Image));
-            growthPanel.transform.SetParent(canvas.transform, false);
+            growthPanel.transform.SetParent(uiRoot, false);
             RectTransform growthRect = growthPanel.GetComponent<RectTransform>();
             growthRect.anchorMin = new Vector2(0.08f, 0.28f);
             growthRect.anchorMax = new Vector2(0.92f, 0.72f);

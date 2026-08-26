@@ -18,7 +18,14 @@ MonoBehaviour:
   fusionSellBaseGold: 30
   fusionSellTierBonus: 8
   baseKillGold: 5
-  rewardGrowthPerRound: 1.065
+  rewardGrowthPerRound: 1.025
+  bossQuestInitialCooldown: 25
+  bossQuestCooldown: 75
+  bossQuestTimeLimit: 25
+  bossQuestHealthMultiplier: 16
+  bossQuestBaseGold: 80
+  bossQuestGoldPerRound: 5
+  bossQuestAttackBonus: 0.03
   roundDuration: 20
   baseMonstersPerRound: 6
   extraMonstersPerRound: 1
@@ -35,10 +42,10 @@ MonoBehaviour:
   tankSpeedMultiplier: 0.7
   tankRewardMultiplier: 2
   goldHealthMultiplier: 1.2
-  goldRewardMultiplier: 3
+  goldRewardMultiplier: 2.25
   bossHealthMultiplier: 10
   bossSpeedMultiplier: 0.55
-  bossRewardMultiplier: 10
+  bossRewardMultiplier: 5
   baseTowerDamage: 6
   towerAttackInterval: 0.55
   towerRange: 3.5

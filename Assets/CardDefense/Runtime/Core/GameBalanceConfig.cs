@@ -12,7 +12,16 @@ namespace CardDefense.Core
         [Min(0)] public int fusionSellBaseGold = 30;
         [Min(0)] public int fusionSellTierBonus = 8;
         [Min(1)] public int baseKillGold = 5;
-        [Min(1f)] public float rewardGrowthPerRound = 1.065f;
+        [Min(1f)] public float rewardGrowthPerRound = 1.025f;
+
+        [Header("Risk Boss Quest")]
+        [Min(5f)] public float bossQuestInitialCooldown = 25f;
+        [Min(10f)] public float bossQuestCooldown = 75f;
+        [Min(5f)] public float bossQuestTimeLimit = 25f;
+        [Min(1f)] public float bossQuestHealthMultiplier = 16f;
+        [Min(0)] public int bossQuestBaseGold = 80;
+        [Min(0)] public int bossQuestGoldPerRound = 5;
+        [Range(0f, 0.25f)] public float bossQuestAttackBonus = 0.03f;
 
         [Header("Rounds")]
         [Min(5f)] public float roundDuration = 20f;
@@ -35,10 +44,10 @@ namespace CardDefense.Core
         [Min(0.1f)] public float tankSpeedMultiplier = 0.7f;
         [Min(0.1f)] public float tankRewardMultiplier = 2f;
         [Min(0.1f)] public float goldHealthMultiplier = 1.2f;
-        [Min(0.1f)] public float goldRewardMultiplier = 3f;
+        [Min(0.1f)] public float goldRewardMultiplier = 2.25f;
         [Min(0.1f)] public float bossHealthMultiplier = 10f;
         [Min(0.1f)] public float bossSpeedMultiplier = 0.55f;
-        [Min(0.1f)] public float bossRewardMultiplier = 10f;
+        [Min(0.1f)] public float bossRewardMultiplier = 5f;
 
         [Header("Tower")]
         [Min(0.1f)] public float baseTowerDamage = 6f;

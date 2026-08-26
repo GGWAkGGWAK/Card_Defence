@@ -1,6 +1,7 @@
 using CardDefense.Combat;
 using CardDefense.Core;
 using CardDefense.Enemies;
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -9,6 +10,8 @@ namespace CardDefense.UI
 {
     public sealed class PrototypeHud : MonoBehaviour
     {
+        public event Action<float> SpeedChanged;
+        public float SelectedSpeed => selectedSpeed;
         private Text goldText;
         private Text roundText;
         private Text monsterText;
@@ -43,7 +46,8 @@ namespace CardDefense.UI
             EconomyService economyService, WaveDirector waveDirector, MonsterSystem monsterSystem,
             CardSummonController summonController, CardTowerSystem towerSystem, GameBalanceConfig balance,
             RunStatisticsService runStatistics, PlayerProfileService playerProfile,
-            GrowthChoiceController growthController, RunModifierService modifierService)
+            GrowthChoiceController growthController, RunModifierService modifierService,
+            RunSaveService runSave)
         {
             goldText = gold;
             roundText = round;
@@ -82,6 +86,7 @@ namespace CardDefense.UI
             waves.RoundChanged += HandleRoundChanged;
             growth.ChoiceSelected += HandleGrowthSelected;
             Refresh();
+            if (runSave != null && runSave.WasRestored) SetMessage("저장된 게임을 이어서 시작했습니다");
         }
 
         private void Update()
@@ -226,6 +231,7 @@ namespace CardDefense.UI
             selectedSpeed = selectedSpeed < 1.5f ? 2f : selectedSpeed < 3f ? 4f : 1f;
             Time.timeScale = selectedSpeed;
             SetButtonLabel(speedButton, "x" + selectedSpeed.ToString("0"));
+            SpeedChanged?.Invoke(selectedSpeed);
         }
 
         private static void SetButtonLabel(Button button, string value)

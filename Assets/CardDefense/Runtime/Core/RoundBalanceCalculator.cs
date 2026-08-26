@@ -20,14 +20,20 @@ namespace CardDefense.Core
         public static RoundBalanceSnapshot Calculate(GameBalanceConfig config, int round)
         {
             round = Mathf.Max(1, round);
-            int monsterCount = config.baseMonstersPerRound +
-                               ((round - 1) * config.extraMonstersPerRound);
+            long rawMonsterCount = config.baseMonstersPerRound +
+                                   ((long)(round - 1) * config.extraMonstersPerRound);
+            int monsterCount = rawMonsterCount > int.MaxValue ? int.MaxValue : (int)rawMonsterCount;
             float milestone = 1f + (Mathf.Floor((round - 1) / 10f) * config.milestoneHealthBonus);
-            float health = config.baseMonsterHealth *
-                           Mathf.Pow(config.healthGrowthPerRound, round - 1) * milestone;
-            int reward = Mathf.CeilToInt(config.baseKillGold *
-                                         Mathf.Pow(config.rewardGrowthPerRound, round - 1));
-            float totalHealth = health * monsterCount;
+            double rawHealth = config.baseMonsterHealth *
+                               Math.Pow(config.healthGrowthPerRound, round - 1) * milestone;
+            float health = rawHealth >= float.MaxValue ? float.MaxValue : (float)rawHealth;
+            double rawReward = config.baseKillGold *
+                               Math.Pow(config.rewardGrowthPerRound, round - 1);
+            int reward = rawReward >= int.MaxValue ? int.MaxValue : Mathf.Max(1, Mathf.CeilToInt((float)rawReward));
+            double rawTotalHealth = rawHealth * monsterCount;
+            float totalHealth = rawTotalHealth >= float.MaxValue ? float.MaxValue : (float)rawTotalHealth;
+            long rawPotentialGold = (long)reward * monsterCount;
+            int potentialGold = rawPotentialGold > int.MaxValue ? int.MaxValue : (int)rawPotentialGold;
             return new RoundBalanceSnapshot
             {
                 Round = round,
@@ -35,7 +41,7 @@ namespace CardDefense.Core
                 HealthPerMonster = health,
                 TotalHealth = totalHealth,
                 RewardPerMonster = reward,
-                PotentialGold = reward * monsterCount,
+                PotentialGold = potentialGold,
                 RequiredDps = totalHealth / Mathf.Max(0.01f, config.roundDuration)
             };
         }

@@ -10,9 +10,21 @@ namespace CardDefense.Editor
     {
         public static void BuildDevelopmentApk()
         {
+            BuildApk("CardDefense-Development.apk", BuildOptions.Development,
+                "CARD_DEFENSE_ANDROID_BUILD_SUCCESS");
+        }
+
+        public static void BuildReleaseApk()
+        {
+            BuildApk("CardDefense-Release.apk", BuildOptions.None,
+                "CARD_DEFENSE_ANDROID_RELEASE_SUCCESS");
+        }
+
+        private static void BuildApk(string fileName, BuildOptions buildOptions, string successMarker)
+        {
             string outputDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, "../Builds/Android"));
             Directory.CreateDirectory(outputDirectory);
-            string outputPath = Path.Combine(outputDirectory, "CardDefense-Development.apk");
+            string outputPath = Path.Combine(outputDirectory, fileName);
 
             BuildPlayerOptions options = new BuildPlayerOptions
             {
@@ -20,7 +32,7 @@ namespace CardDefense.Editor
                 locationPathName = outputPath,
                 target = BuildTarget.Android,
                 targetGroup = BuildTargetGroup.Android,
-                options = BuildOptions.Development
+                options = buildOptions
             };
 
             BuildReport report = BuildPipeline.BuildPlayer(options);
@@ -30,7 +42,7 @@ namespace CardDefense.Editor
                 throw new InvalidOperationException("Android build failed: " + summary.result);
             }
 
-            Debug.Log("CARD_DEFENSE_ANDROID_BUILD_SUCCESS: " + outputPath + " / " + summary.totalSize + " bytes");
+            Debug.Log(successMarker + ": " + outputPath + " / " + summary.totalSize + " bytes");
         }
     }
 }

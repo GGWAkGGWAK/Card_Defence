@@ -32,5 +32,11 @@ namespace CardDefense.Core
             Gold += amount;
             GoldChanged?.Invoke(Gold);
         }
+
+        public void RestoreGold(int amount)
+        {
+            Gold = Mathf.Max(0, amount);
+            GoldChanged?.Invoke(Gold);
+        }
     }
 }
