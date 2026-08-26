@@ -79,9 +79,10 @@ namespace CardDefense.Core
             if (shader == null) shader = Shader.Find("CardDefense/MonsterChromaKey");
             if (shader == null) return null;
             monsterMaterial = new Material(shader) { name = "MonsterChromaKeyRuntime" };
-            monsterMaterial.SetColor("_KeyColor", new Color(1f, 0f, 1f, 1f));
-            monsterMaterial.SetFloat("_Tolerance", 0.13f);
-            monsterMaterial.SetFloat("_Softness", 0.12f);
+            // Generated atlas background is a pink gradient rather than pure magenta.
+            monsterMaterial.SetColor("_KeyColor", new Color(0.94f, 0.045f, 0.89f, 1f));
+            monsterMaterial.SetFloat("_Tolerance", 0.22f);
+            monsterMaterial.SetFloat("_Softness", 0.10f);
             return monsterMaterial;
         }
 

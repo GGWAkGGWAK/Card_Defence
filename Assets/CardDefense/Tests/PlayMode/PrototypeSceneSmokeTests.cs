@@ -77,6 +77,12 @@ namespace CardDefense.Tests
             Assert.IsNotNull(GameObject.Find("CasinoArenaBackground"));
             Assert.IsNotNull(Object.FindObjectOfType<AudioListener>());
             Assert.IsNotNull(VisualAssetLibrary.GetUiFrameSprite());
+            GameSettingsService audioSettings = Object.FindObjectOfType<GameSettingsService>();
+            Assert.IsTrue(audioSettings.BgmEnabled);
+            Assert.IsTrue(audioSettings.IsBgmPlaying);
+            Material monsterMaterial = VisualAssetLibrary.GetMonsterMaterial();
+            Assert.IsNotNull(monsterMaterial);
+            Assert.GreaterOrEqual(monsterMaterial.GetFloat("_Tolerance"), 0.2f);
 
             CombatEffectSystem effects = Object.FindObjectOfType<CombatEffectSystem>();
             effects.PlayBeam(Vector3.zero, Vector3.one, true, PokerHand.Flush);
@@ -160,6 +166,12 @@ namespace CardDefense.Tests
             Assert.AreEqual(0.55f, settings.SfxVolume, 0.001f);
             Assert.IsNotNull(GameObject.Find("BgmVolume").GetComponent<Slider>());
             Assert.IsNotNull(GameObject.Find("SfxVolume").GetComponent<Slider>());
+            RectTransform fill = GameObject.Find("BgmVolume").transform.Find("FillArea/Fill")
+                .GetComponent<RectTransform>();
+            Assert.AreEqual(0f, fill.anchorMin.y, 0.001f);
+            Assert.AreEqual(1f, fill.anchorMax.y, 0.001f);
+            Assert.AreEqual(0f, fill.offsetMin.y, 0.001f);
+            Assert.AreEqual(0f, fill.offsetMax.y, 0.001f);
             settingsUi.ShowPokerHands();
             Assert.AreEqual(GuidePage.PokerHands, settingsUi.CurrentPage);
             settingsUi.ShowRules();
