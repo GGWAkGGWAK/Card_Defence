@@ -11,7 +11,9 @@ namespace CardDefense.Core
         [SerializeField] private Vector2 size = Vector2.one;
 
         private static Sprite sharedSprite;
+        private static Sprite monsterAuraSprite;
         private SpriteRenderer spriteRenderer;
+        private SpriteRenderer monsterAura;
         private TextMesh label;
         private TextMesh handLabel;
         private Color cardColor;
@@ -27,10 +29,13 @@ namespace CardDefense.Core
         private float deathAnimationDuration;
         private Vector2 moveDirection = Vector2.right;
         private MonsterArchetype monsterArchetype;
+        private Color monsterAccentColor = Color.white;
         private Vector3 cardRestScale = new Vector3(0.8f, 1.05f, 1f);
 
         public bool IsSpawnAnimating => monsterMode && spawnAnimationTimer > 0f;
         public bool IsDeathAnimating => monsterMode && deathAnimationTimer > 0f;
+        public Color MonsterAccentColor => monsterAccentColor;
+        public bool HasMonsterAura => monsterAura != null && monsterAura.enabled;
 
         private void Awake()
         {
@@ -50,6 +55,7 @@ namespace CardDefense.Core
             spriteRenderer.color = Color.white;
             monsterMode = true;
             monsterArchetype = archetype;
+            ConfigureMonsterAura(archetype);
             animationPhase = Random.value * Mathf.PI * 2f;
             hitFlashTimer = 0f;
             deathAnimationTimer = 0f;
@@ -77,7 +83,7 @@ namespace CardDefense.Core
             spawnAnimationTimer = spawnAnimationDuration;
             transform.localScale = Vector3.zero;
             transform.localRotation = Quaternion.identity;
-            spriteRenderer.sortingOrder = 2;
+            UpdateMonsterSorting();
         }
 
         public void SetMonsterMoveDirection(Vector2 direction)
@@ -112,6 +118,7 @@ namespace CardDefense.Core
         {
             EnsureReady();
             monsterMode = false;
+            if (monsterAura != null) monsterAura.enabled = false;
             deathAnimationTimer = 0f;
             spawnAnimationTimer = 0f;
             transform.localRotation = Quaternion.identity;
@@ -182,6 +189,7 @@ namespace CardDefense.Core
             float deltaTime = Time.deltaTime;
             if (deathAnimationTimer > 0f)
             {
+                UpdateMonsterSorting();
                 deathAnimationTimer -= deltaTime;
                 float normalized = 1f - Mathf.Clamp01(deathAnimationTimer / deathAnimationDuration);
                 float remaining = 1f - normalized;
@@ -193,8 +201,17 @@ namespace CardDefense.Core
                     spinDirection * Mathf.Lerp(0f, 105f, normalized));
                 spriteRenderer.color = new Color(1f, Mathf.Lerp(0.48f, 0.08f, normalized),
                     Mathf.Lerp(0.32f, 0.05f, normalized), remaining);
+                if (monsterAura != null)
+                {
+                    Color auraColor = monsterAccentColor;
+                    auraColor.a = remaining * 0.52f;
+                    monsterAura.color = auraColor;
+                    monsterAura.transform.localScale = Vector3.one * Mathf.Lerp(1f, 1.55f, normalized);
+                }
                 return;
             }
+
+            UpdateMonsterSorting();
 
             float frequency = 4.2f;
             float bounceAmount = 0.045f;
@@ -238,7 +255,21 @@ namespace CardDefense.Core
                 float shine = 0.88f + (wave + 1f) * 0.06f;
                 spriteRenderer.color = new Color(1f, shine, 0.72f, 1f);
             }
-            else spriteRenderer.color = Color.white;
+            else spriteRenderer.color = Color.Lerp(Color.white, monsterAccentColor,
+                monsterArchetype == MonsterArchetype.Normal ? 0.05f : 0.13f);
+
+            if (monsterAura != null)
+            {
+                float auraPulse = 1f + (wave + 1f) *
+                                  (monsterArchetype == MonsterArchetype.Boss ? 0.09f : 0.035f);
+                float auraBase = monsterArchetype == MonsterArchetype.Boss ? 1.34f :
+                    monsterArchetype == MonsterArchetype.Tank ? 1.18f : 1.08f;
+                monsterAura.transform.localScale = Vector3.one * auraBase * auraPulse;
+                Color auraColor = monsterAccentColor;
+                auraColor.a = monsterArchetype == MonsterArchetype.Normal ? 0.2f :
+                    monsterArchetype == MonsterArchetype.Boss ? 0.62f : 0.43f;
+                monsterAura.color = auraColor;
+            }
 
             float spawnScale = 1f;
             if (spawnAnimationTimer > 0f)
@@ -261,6 +292,50 @@ namespace CardDefense.Core
         {
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
             if (spriteRenderer.sprite == null) spriteRenderer.sprite = GetSharedSprite();
+        }
+
+        private void ConfigureMonsterAura(MonsterArchetype archetype)
+        {
+            switch (archetype)
+            {
+                case MonsterArchetype.Fast:
+                    monsterAccentColor = new Color(0.14f, 0.9f, 1f, 1f);
+                    break;
+                case MonsterArchetype.Tank:
+                    monsterAccentColor = new Color(0.95f, 0.48f, 0.18f, 1f);
+                    break;
+                case MonsterArchetype.Gold:
+                    monsterAccentColor = new Color(1f, 0.82f, 0.12f, 1f);
+                    break;
+                case MonsterArchetype.Boss:
+                    monsterAccentColor = new Color(0.92f, 0.16f, 0.68f, 1f);
+                    break;
+                default:
+                    monsterAccentColor = new Color(0.36f, 0.92f, 0.5f, 1f);
+                    break;
+            }
+            if (monsterAura == null)
+            {
+                Transform existing = transform.Find("MonsterAura");
+                if (existing != null) monsterAura = existing.GetComponent<SpriteRenderer>();
+            }
+            if (monsterAura == null)
+            {
+                GameObject auraObject = new GameObject("MonsterAura");
+                auraObject.transform.SetParent(transform, false);
+                monsterAura = auraObject.AddComponent<SpriteRenderer>();
+            }
+            monsterAura.sprite = GetMonsterAuraSprite();
+            monsterAura.transform.localPosition = new Vector3(0f, -0.04f, 0.08f);
+            monsterAura.transform.localRotation = Quaternion.identity;
+            monsterAura.enabled = true;
+        }
+
+        private void UpdateMonsterSorting()
+        {
+            int baseOrder = 200 - Mathf.RoundToInt(transform.position.y * 10f);
+            spriteRenderer.sortingOrder = baseOrder;
+            if (monsterAura != null) monsterAura.sortingOrder = baseOrder - 1;
         }
 
         private TextMesh EnsureCardText(TextMesh current, string objectName, Vector3 localPosition,
@@ -302,6 +377,29 @@ namespace CardDefense.Core
             sharedSprite = Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
             sharedSprite.name = "PrototypeSquare";
             return sharedSprite;
+        }
+
+        private static Sprite GetMonsterAuraSprite()
+        {
+            if (monsterAuraSprite != null) return monsterAuraSprite;
+            const int resolution = 32;
+            Texture2D texture = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false);
+            texture.name = "MonsterAuraRing";
+            for (int y = 0; y < resolution; y++)
+            for (int x = 0; x < resolution; x++)
+            {
+                float dx = (x - 15.5f) / 15.5f;
+                float dy = (y - 15.5f) / 15.5f;
+                float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                float ring = Mathf.Clamp01(1f - Mathf.Abs(distance - 0.72f) / 0.2f);
+                float glow = Mathf.Clamp01(1f - distance) * 0.28f;
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Max(ring * 0.82f, glow)));
+            }
+            texture.Apply(false, true);
+            monsterAuraSprite = Sprite.Create(texture, new Rect(0f, 0f, resolution, resolution),
+                new Vector2(0.5f, 0.5f), resolution);
+            monsterAuraSprite.name = "MonsterAuraSprite";
+            return monsterAuraSprite;
         }
 
         private static string SuitText(CardSuit suit)

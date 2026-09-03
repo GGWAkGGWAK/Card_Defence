@@ -128,6 +128,40 @@ namespace CardDefense.Tests
         }
 
         [UnityTest]
+        public IEnumerator MonsterArchetypesUseDistinctAuraLabelsAndBossHealthStyle()
+        {
+            GameObject testObject = new GameObject("MonsterVisualStyleTest");
+            testObject.AddComponent<SpriteRenderer>();
+            PrototypeVisual visual = testObject.AddComponent<PrototypeVisual>();
+            MonsterHealthBar healthBar = testObject.AddComponent<MonsterHealthBar>();
+
+            visual.SetMonsterStyle(MonsterArchetype.Fast);
+            healthBar.Show(MonsterArchetype.Fast);
+            Color fastAccent = visual.MonsterAccentColor;
+            Assert.IsTrue(visual.HasMonsterAura);
+            Assert.AreEqual("신속", healthBar.DisplayName);
+            Assert.IsFalse(healthBar.IsBossStyle);
+
+            visual.SetMonsterStyle(MonsterArchetype.Tank);
+            healthBar.Show(MonsterArchetype.Tank);
+            Assert.AreNotEqual(fastAccent, visual.MonsterAccentColor);
+            Assert.AreEqual("중장", healthBar.DisplayName);
+
+            visual.SetMonsterStyle(MonsterArchetype.Boss);
+            healthBar.Show(MonsterArchetype.Boss);
+            Assert.IsTrue(healthBar.IsBossStyle);
+            Assert.AreEqual("운명의 수호자", healthBar.DisplayName);
+            healthBar.SetHealth(0.2f);
+            Assert.AreEqual(0.2f, healthBar.DisplayedNormalizedHealth, 0.001f);
+            Assert.Greater(healthBar.CurrentBarColor.r, healthBar.CurrentBarColor.g);
+            Assert.IsNotNull(testObject.transform.Find("MonsterAura"));
+            Assert.IsNotNull(testObject.transform.Find("HealthBar/TypeName"));
+
+            Object.Destroy(testObject);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator MonstersAnimateSpawnMovementHitAndDeathBeforeReturningToPool()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
