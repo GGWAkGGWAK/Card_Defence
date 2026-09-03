@@ -33,6 +33,10 @@ namespace CardDefense.Enemies
         private Monster challengeBoss;
 
         public bool HasActiveChallengeBoss => challengeBoss != null && challengeBoss.IsAlive;
+        public float ChallengeBossHealthNormalized => HasActiveChallengeBoss
+            ? Mathf.Clamp01(challengeBoss.Health / Mathf.Max(1f, challengeBoss.MaxHealth))
+            : 0f;
+        public int LastFailureReinforcements { get; private set; }
 
         public void Configure(GameBalanceConfig balance, LoopPath loopPath, MonsterPool monsterPool,
             MonsterSystem monsterSystem, EconomyService economyService)
@@ -122,17 +126,34 @@ namespace CardDefense.Enemies
 
         public bool TrySpawnChallengeBoss()
         {
+            return TrySpawnChallengeBoss(1f);
+        }
+
+        public bool TrySpawnChallengeBoss(float difficultyMultiplier)
+        {
             if (IsGameOver || HasActiveChallengeBoss || config == null || pool == null) return false;
             RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, Mathf.Max(1, CurrentRound));
             Monster monster = pool.Get();
             monster.transform.SetParent(null, true);
-            float health = balance.HealthPerMonster * config.bossQuestHealthMultiplier;
+            float health = balance.HealthPerMonster * config.bossQuestHealthMultiplier *
+                           Mathf.Max(1f, difficultyMultiplier);
             float speed = config.monsterMoveSpeed * config.bossSpeedMultiplier;
             monster.Spawn(path, MonsterArchetype.Boss, health, speed, 0, releaseHandler);
             challengeBoss = monster;
             monsters.Register(monster);
             ChallengeBossSpawned?.Invoke();
             if (monsters.ActiveCount >= config.defeatMonsterLimit) LoseGame();
+            return true;
+        }
+
+        public bool ApplyChallengeFailure(int reinforcementCount, float healthBonus, float speedBonus)
+        {
+            if (!HasActiveChallengeBoss || config == null) return false;
+            challengeBoss.Enrage(healthBonus, speedBonus);
+            LastFailureReinforcements = Mathf.Max(0, reinforcementCount);
+            if (LastFailureReinforcements > 0)
+                pendingBatches.Enqueue(new WaveSpawnBatch(Mathf.Max(1, CurrentRound),
+                    LastFailureReinforcements));
             return true;
         }
 

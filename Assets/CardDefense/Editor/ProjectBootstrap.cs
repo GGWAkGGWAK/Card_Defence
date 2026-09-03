@@ -106,6 +106,11 @@ namespace CardDefense.Editor
             config.bossQuestBaseGold = 80;
             config.bossQuestGoldPerRound = 5;
             config.bossQuestAttackBonus = 0.03f;
+            config.bossQuestHealthPerRiskTier = 0.18f;
+            config.bossQuestRewardPerRiskTier = 0.12f;
+            config.bossQuestFailureReinforcements = 5;
+            config.bossQuestFailureHealthBonus = 0.3f;
+            config.bossQuestFailureSpeedBonus = 0.2f;
         }
 
         private static Monster CreateMonsterPrefab()

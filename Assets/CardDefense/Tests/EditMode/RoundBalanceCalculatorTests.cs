@@ -1,5 +1,6 @@
 using CardDefense.Core;
 using CardDefense.Enemies;
+using CardDefense.UI;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -111,6 +112,33 @@ namespace CardDefense.Tests
 
             Assert.Less((float)round80.RewardPerMonster / round40.RewardPerMonster, 3f);
             Assert.Greater(round80.HealthPerMonster / round40.HealthPerMonster, 10f);
+            Object.DestroyImmediate(config);
+        }
+
+        [Test]
+        public void BossQuestRiskRisesWithMilestoneRoundsAndCompletedWins()
+        {
+            Assert.AreEqual(1, BossQuestController.CalculateRiskTier(1, 0));
+            Assert.AreEqual(2, BossQuestController.CalculateRiskTier(11, 0));
+            Assert.AreEqual(5, BossQuestController.CalculateRiskTier(21, 2));
+        }
+
+        [Test]
+        public void BossQuestHealthRiskOutgrowsRewardAndFailureAddsReinforcements()
+        {
+            GameBalanceConfig config = ScriptableObject.CreateInstance<GameBalanceConfig>();
+            float baseHealth = BossQuestController.CalculateHealthMultiplier(config, 1, 0);
+            float highRiskHealth = BossQuestController.CalculateHealthMultiplier(config, 31, 3);
+            int baseReward = BossQuestController.CalculateReward(config, 31, 0);
+            int highRiskReward = BossQuestController.CalculateReward(config, 31, 3);
+            int baseReinforcements = BossQuestController.CalculateFailureReinforcements(config, 1);
+            int highRiskReinforcements = BossQuestController.CalculateFailureReinforcements(config, 7);
+
+            Assert.AreEqual(1f, baseHealth, 0.001f);
+            Assert.Greater(highRiskHealth, 1f);
+            Assert.Greater(highRiskReward, baseReward);
+            Assert.Greater(highRiskHealth, (float)highRiskReward / baseReward);
+            Assert.Greater(highRiskReinforcements, baseReinforcements);
             Object.DestroyImmediate(config);
         }
     }

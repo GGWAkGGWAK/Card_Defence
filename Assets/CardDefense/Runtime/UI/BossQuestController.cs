@@ -10,9 +10,16 @@ namespace CardDefense.UI
     {
         public event Action<bool, int> QuestCompleted;
         public bool IsActive { get; private set; }
-        public bool IsReady => !IsActive && cooldownRemaining <= 0f;
+        public bool IsReady => !IsActive && cooldownRemaining <= 0f &&
+                               waves != null && !waves.HasActiveChallengeBoss;
         public float CooldownRemaining => cooldownRemaining;
         public float ChallengeRemaining => challengeRemaining;
+        public int CurrentRiskTier { get; private set; }
+        public int CurrentRewardGold => rewardGold;
+        public float CurrentHealthMultiplier { get; private set; } = 1f;
+        public int LastFailureReinforcements { get; private set; }
+        public float ProgressNormalized { get; private set; }
+        public string PreviewText => label != null ? label.text : string.Empty;
 
         private GameBalanceConfig config;
         private WaveDirector waves;
@@ -20,6 +27,8 @@ namespace CardDefense.UI
         private RunModifierService modifiers;
         private Button button;
         private Text label;
+        private Image progressFill;
+        private RectTransform progressFillRect;
         private float cooldownRemaining;
         private float challengeRemaining;
         private int rewardGold;
@@ -63,10 +72,12 @@ namespace CardDefense.UI
 
         private void StartQuest()
         {
-            if (!IsReady || !waves.TrySpawnChallengeBoss()) return;
+            if (!IsReady) return;
+            PreparePreview();
+            if (!waves.TrySpawnChallengeBoss(CurrentHealthMultiplier)) return;
             IsActive = true;
             challengeRemaining = config.bossQuestTimeLimit;
-            rewardGold = CalculateReward(config, waves.CurrentRound);
+            LastFailureReinforcements = 0;
             RefreshLabel();
         }
 
@@ -78,7 +89,7 @@ namespace CardDefense.UI
             modifiers.ApplyBossQuestReward(config.bossQuestAttackBonus);
             cooldownRemaining = config.bossQuestCooldown;
             QuestCompleted?.Invoke(true, rewardGold);
-            RefreshLabel("성공! " + rewardGold + "G + 공격력 " +
+            RefreshLabel("성공! " + rewardGold + "G · 공격력 +" +
                          Mathf.RoundToInt(config.bossQuestAttackBonus * 100f) + "%");
         }
 
@@ -87,8 +98,11 @@ namespace CardDefense.UI
             IsActive = false;
             challengeRemaining = 0f;
             cooldownRemaining = config.bossQuestCooldown;
+            LastFailureReinforcements = CalculateFailureReinforcements(config, CurrentRiskTier);
+            waves.ApplyChallengeFailure(LastFailureReinforcements,
+                config.bossQuestFailureHealthBonus, config.bossQuestFailureSpeedBonus);
             QuestCompleted?.Invoke(false, 0);
-            RefreshLabel("실패 - 보스는 필드에 잔류");
+            RefreshLabel("실패! 보스 격노 · 증원 " + LastFailureReinforcements + "체");
         }
 
         private void HandleGameLost()
@@ -96,35 +110,91 @@ namespace CardDefense.UI
             if (button != null) button.interactable = false;
         }
 
+        private void PreparePreview()
+        {
+            int wins = modifiers != null ? modifiers.BossQuestWins : 0;
+            int round = waves != null ? waves.CurrentRound : 1;
+            CurrentRiskTier = CalculateRiskTier(round, wins);
+            CurrentHealthMultiplier = CalculateHealthMultiplier(config, round, wins);
+            rewardGold = CalculateReward(config, round, wins);
+        }
+
         private void RefreshLabel(string temporary = null)
         {
-            if (label == null) return;
+            if (label == null || config == null) return;
             if (!string.IsNullOrEmpty(temporary))
             {
                 statusMessage = temporary;
-                statusRemaining = 2.4f;
+                statusRemaining = 2.8f;
             }
+            PreparePreviewIfIdle();
+            UpdateProgress();
+
             if (!string.IsNullOrEmpty(statusMessage)) label.text = statusMessage;
             else if (IsActive)
-                label.text = "위험 보스  " + Mathf.CeilToInt(challengeRemaining) + "초\n보상 " + rewardGold + "G + 공격력";
+            {
+                int bossHealth = Mathf.CeilToInt(waves.ChallengeBossHealthNormalized * 100f);
+                label.text = "위험 " + CurrentRiskTier + " · 운명의 수호자  " +
+                             Mathf.CeilToInt(challengeRemaining) + "초\nHP " + bossHealth +
+                             "% · 성공 " + rewardGold + "G + 공격력";
+            }
+            else if (waves.HasActiveChallengeBoss)
+                label.text = "격노한 보스가 필드에 잔류 중\n처치 후 다음 도전 가능";
             else if (IsReady)
-                label.text = "위험 보스 소환\n" + Mathf.CeilToInt(config.bossQuestTimeLimit) + "초 제한";
+                label.text = "보스 도전 · 위험 " + CurrentRiskTier + "  [소환]\nHP x" +
+                             CurrentHealthMultiplier.ToString("0.0") + " · " +
+                             Mathf.CeilToInt(config.bossQuestTimeLimit) + "초 · " + rewardGold + "G";
             else
-                label.text = "보스 퀘스트\n재충전 " + Mathf.CeilToInt(cooldownRemaining) + "초";
+                label.text = "보스 재정비  " + Mathf.CeilToInt(cooldownRemaining) + "초\n" +
+                             "실패: 강화 + 증원 " +
+                             CalculateFailureReinforcements(config, CurrentRiskTier) + "체";
             button.interactable = IsReady;
+        }
+
+        private void PreparePreviewIfIdle()
+        {
+            if (!IsActive) PreparePreview();
+        }
+
+        private void UpdateProgress()
+        {
+            if (progressFill == null) return;
+            if (IsActive)
+            {
+                ProgressNormalized = Mathf.Clamp01(challengeRemaining /
+                                                    Mathf.Max(0.01f, config.bossQuestTimeLimit));
+                progressFill.color = ProgressNormalized <= 0.3f
+                    ? new Color(1f, 0.12f, 0.08f, 1f)
+                    : new Color(1f, 0.63f, 0.08f, 1f);
+            }
+            else if (cooldownRemaining > 0f)
+            {
+                float cooldownDuration = Mathf.Max(config.bossQuestInitialCooldown,
+                    config.bossQuestCooldown);
+                ProgressNormalized = 1f - Mathf.Clamp01(cooldownRemaining / cooldownDuration);
+                progressFill.color = new Color(0.25f, 0.7f, 0.82f, 1f);
+            }
+            else
+            {
+                ProgressNormalized = 1f;
+                progressFill.color = new Color(0.95f, 0.3f, 0.16f, 1f);
+            }
+            if (progressFillRect != null)
+                progressFillRect.anchorMax = new Vector2(Mathf.Max(0.001f, ProgressNormalized), 1f);
         }
 
         private void BuildUi(Transform canvas, Font font)
         {
-            GameObject objectRoot = new GameObject("BossQuestButton", typeof(RectTransform), typeof(Image), typeof(Button));
+            GameObject objectRoot = new GameObject("BossQuestButton", typeof(RectTransform),
+                typeof(Image), typeof(Button));
             objectRoot.transform.SetParent(canvas, false);
             RectTransform rect = objectRoot.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.035f, 0.795f);
-            rect.anchorMax = new Vector2(0.36f, 0.865f);
+            rect.anchorMin = new Vector2(0.035f, 0.785f);
+            rect.anchorMax = new Vector2(0.43f, 0.885f);
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
             Image image = objectRoot.GetComponent<Image>();
-            image.color = new Color(0.32f, 0.035f, 0.055f, 0.96f);
+            image.color = new Color(0.22f, 0.025f, 0.055f, 0.97f);
             button = objectRoot.GetComponent<Button>();
             ColorBlock colors = button.colors;
             colors.normalColor = Color.white;
@@ -138,11 +208,11 @@ namespace CardDefense.UI
             RectTransform textRect = textObject.GetComponent<RectTransform>();
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(8f, 4f);
+            textRect.offsetMin = new Vector2(8f, 10f);
             textRect.offsetMax = new Vector2(-8f, -4f);
             label = textObject.GetComponent<Text>();
             label.font = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = 30;
+            label.fontSize = 25;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(1f, 0.9f, 0.72f, 1f);
@@ -150,6 +220,26 @@ namespace CardDefense.UI
             Outline outline = textObject.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
             outline.effectDistance = new Vector2(2f, -2f);
+
+            GameObject trackObject = new GameObject("BossQuestTimeTrack", typeof(RectTransform), typeof(Image));
+            trackObject.transform.SetParent(objectRoot.transform, false);
+            RectTransform trackRect = trackObject.GetComponent<RectTransform>();
+            trackRect.anchorMin = new Vector2(0.03f, 0.03f);
+            trackRect.anchorMax = new Vector2(0.97f, 0.1f);
+            trackRect.offsetMin = Vector2.zero;
+            trackRect.offsetMax = Vector2.zero;
+            trackObject.GetComponent<Image>().color = new Color(0.02f, 0.025f, 0.035f, 0.95f);
+
+            GameObject fillObject = new GameObject("BossQuestTimeFill", typeof(RectTransform), typeof(Image));
+            fillObject.transform.SetParent(trackObject.transform, false);
+            progressFillRect = fillObject.GetComponent<RectTransform>();
+            progressFillRect.anchorMin = Vector2.zero;
+            progressFillRect.anchorMax = Vector2.one;
+            progressFillRect.offsetMin = Vector2.zero;
+            progressFillRect.offsetMax = Vector2.zero;
+            progressFill = fillObject.GetComponent<Image>();
+            progressFill.type = Image.Type.Simple;
+            progressFill.raycastTarget = false;
         }
 
         public BossQuestSnapshot CaptureSnapshot()
@@ -163,11 +253,38 @@ namespace CardDefense.UI
             };
         }
 
+        public static int CalculateRiskTier(int round, int completedWins)
+        {
+            return 1 + Mathf.Max(0, (Mathf.Max(1, round) - 1) / 10) + Mathf.Max(0, completedWins);
+        }
+
+        public static float CalculateHealthMultiplier(GameBalanceConfig balance, int round, int completedWins)
+        {
+            if (balance == null) return 1f;
+            int tier = CalculateRiskTier(round, completedWins);
+            return 1f + Mathf.Max(0, tier - 1) * balance.bossQuestHealthPerRiskTier;
+        }
+
         public static int CalculateReward(GameBalanceConfig balance, int round)
         {
+            return CalculateReward(balance, round, 0);
+        }
+
+        public static int CalculateReward(GameBalanceConfig balance, int round, int completedWins)
+        {
             if (balance == null) return 0;
-            return Mathf.Max(0, balance.bossQuestBaseGold +
-                                Mathf.Max(1, round) * balance.bossQuestGoldPerRound);
+            int baseReward = Mathf.Max(0, balance.bossQuestBaseGold +
+                                          Mathf.Max(1, round) * balance.bossQuestGoldPerRound);
+            int tier = CalculateRiskTier(round, completedWins);
+            float multiplier = 1f + Mathf.Max(0, tier - 1) * balance.bossQuestRewardPerRiskTier;
+            return Mathf.Max(0, Mathf.CeilToInt(baseReward * multiplier));
+        }
+
+        public static int CalculateFailureReinforcements(GameBalanceConfig balance, int riskTier)
+        {
+            if (balance == null) return 0;
+            return Mathf.Max(0, balance.bossQuestFailureReinforcements +
+                                Mathf.Max(0, riskTier - 1) / 2);
         }
 
         public void RestoreSnapshot(BossQuestSnapshot snapshot)
@@ -177,6 +294,9 @@ namespace CardDefense.UI
             rewardGold = Mathf.Max(0, snapshot.RewardGold);
             IsActive = snapshot.IsActive && challengeRemaining > 0f && waves.HasActiveChallengeBoss;
             if (snapshot.IsActive && !IsActive) cooldownRemaining = config.bossQuestCooldown;
+            int savedReward = rewardGold;
+            PreparePreview();
+            if (IsActive) rewardGold = savedReward;
             RefreshLabel();
         }
 
