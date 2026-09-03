@@ -26,6 +26,11 @@ MonoBehaviour:
   bossQuestBaseGold: 80
   bossQuestGoldPerRound: 5
   bossQuestAttackBonus: 0.03
+  bossQuestHealthPerRiskTier: 0.18
+  bossQuestRewardPerRiskTier: 0.12
+  bossQuestFailureReinforcements: 5
+  bossQuestFailureHealthBonus: 0.3
+  bossQuestFailureSpeedBonus: 0.2
   roundDuration: 20
   baseMonstersPerRound: 6
   extraMonstersPerRound: 1

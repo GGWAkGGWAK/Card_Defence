@@ -22,6 +22,11 @@ namespace CardDefense.Core
         [Min(0)] public int bossQuestBaseGold = 80;
         [Min(0)] public int bossQuestGoldPerRound = 5;
         [Range(0f, 0.25f)] public float bossQuestAttackBonus = 0.03f;
+        [Range(0f, 1f)] public float bossQuestHealthPerRiskTier = 0.18f;
+        [Range(0f, 1f)] public float bossQuestRewardPerRiskTier = 0.12f;
+        [Min(0)] public int bossQuestFailureReinforcements = 5;
+        [Range(0f, 1f)] public float bossQuestFailureHealthBonus = 0.3f;
+        [Range(0f, 1f)] public float bossQuestFailureSpeedBonus = 0.2f;
 
         [Header("Rounds")]
         [Min(5f)] public float roundDuration = 20f;

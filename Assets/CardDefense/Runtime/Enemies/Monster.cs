@@ -99,6 +99,17 @@ namespace CardDefense.Enemies
             if (Health <= 0f) BeginDeath();
         }
 
+        public void Enrage(float healthBonus, float speedBonus)
+        {
+            if (!IsAlive) return;
+            float previousMaxHealth = MaxHealth;
+            MaxHealth *= 1f + Mathf.Clamp(healthBonus, 0f, 1f);
+            Health = Mathf.Min(MaxHealth, Health + MaxHealth - previousMaxHealth);
+            moveSpeed *= 1f + Mathf.Clamp(speedBonus, 0f, 1f);
+            if (healthBar != null) healthBar.SetHealth(Health / MaxHealth);
+            if (visual != null) visual.FlashHit();
+        }
+
         public void ForceDespawn()
         {
             if (IsAlive || IsDying) CompleteRelease(false);

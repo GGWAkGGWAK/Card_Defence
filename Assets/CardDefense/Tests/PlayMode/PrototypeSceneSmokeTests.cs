@@ -73,6 +73,11 @@ namespace CardDefense.Tests
             Assert.IsNotNull(Object.FindObjectOfType<PresentationEffectController>());
             Assert.IsNotNull(Object.FindObjectOfType<UiThemeController>());
             Assert.IsNotNull(Object.FindObjectOfType<PerformanceManager>());
+            BossQuestController bossQuest = Object.FindObjectOfType<BossQuestController>();
+            Assert.IsNotNull(bossQuest);
+            Assert.GreaterOrEqual(bossQuest.CurrentRiskTier, 1);
+            Assert.Greater(bossQuest.CurrentRewardGold, 0);
+            Assert.IsNotNull(GameObject.Find("BossQuestTimeFill"));
             Assert.IsNotNull(GameObject.Find("SummonButton").GetComponent<Outline>());
             Assert.IsNotNull(GameObject.Find("CasinoArenaBackground"));
             Assert.IsNotNull(Object.FindObjectOfType<AudioListener>());
