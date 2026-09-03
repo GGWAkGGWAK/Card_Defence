@@ -11,6 +11,7 @@ namespace CardDefense.Enemies
         public event Action<int> RoundChanged;
         public event Action GameLost;
         public event Action<int> MonsterDefeated;
+        public event Action<Vector3, int> MonsterRewarded;
         public event Action ChallengeBossDefeated;
         public event Action ChallengeBossSpawned;
 
@@ -113,6 +114,7 @@ namespace CardDefense.Enemies
             {
                 int adjustedReward = modifiers != null ? modifiers.ApplyKillGold(reward) : reward;
                 economy.AddGold(adjustedReward);
+                MonsterRewarded?.Invoke(monster.transform.position, adjustedReward);
                 MonsterDefeated?.Invoke(adjustedReward);
             }
             pool.Release(monster);

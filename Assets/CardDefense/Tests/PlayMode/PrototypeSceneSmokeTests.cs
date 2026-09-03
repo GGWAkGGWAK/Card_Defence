@@ -87,6 +87,8 @@ namespace CardDefense.Tests
             CombatEffectSystem effects = Object.FindObjectOfType<CombatEffectSystem>();
             effects.PlayBeam(Vector3.zero, Vector3.one, true, PokerHand.Flush);
             Assert.AreEqual(PokerHand.Flush, effects.LastPlayedHand);
+            Assert.AreEqual(CardSuit.Spade, effects.LastPlayedSuit);
+            Assert.Greater(effects.ActiveProjectileCount, 0);
             Assert.Greater(effects.ActiveImpactCount, 0);
 
             WaveDirector waves = Object.FindObjectOfType<WaveDirector>();
@@ -96,6 +98,33 @@ namespace CardDefense.Tests
             Assert.Greater(activeMonster.MaxHealth, 0f);
             Assert.IsNotNull(activeMonster.GetComponent<MonsterHealthBar>());
             StringAssert.StartsWith("Monster_", activeMonster.GetComponent<SpriteRenderer>().sprite.name);
+        }
+
+        [UnityTest]
+        public IEnumerator CombatFeedbackUsesSuitProjectilesAndPooledGoldText()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            CombatEffectSystem effects = Object.FindObjectOfType<CombatEffectSystem>();
+            Assert.IsNotNull(effects);
+            effects.PlayProjectile(Vector3.zero, Vector3.right * 2f, false,
+                PokerHand.FullHouse, CardSuit.Heart);
+            Assert.AreEqual(PokerHand.FullHouse, effects.LastPlayedHand);
+            Assert.AreEqual(CardSuit.Heart, effects.LastPlayedSuit);
+            Assert.Greater(effects.ActiveProjectileCount, 0);
+            Assert.Greater(effects.LastProjectileColor.r, effects.LastProjectileColor.g);
+
+            effects.PlayGoldReward(Vector3.zero, 37);
+            Assert.AreEqual(37, effects.LastRewardGold);
+            Assert.Greater(effects.ActiveRewardTextCount, 0);
+            Assert.IsNotNull(GameObject.Find("CardProjectile_00"));
+            Assert.IsNotNull(GameObject.Find("RewardText_00"));
+
+            yield return new WaitForSeconds(0.95f);
+            Assert.AreEqual(0, effects.ActiveProjectileCount);
+            Assert.AreEqual(0, effects.ActiveRewardTextCount);
         }
 
         [UnityTest]

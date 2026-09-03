@@ -100,6 +100,7 @@ namespace CardDefense.Core
             summon.SetRunModifiers(modifiers);
             waves.Configure(config, path, monsterPool, monsters, economy);
             waves.SetRunModifiers(modifiers);
+            effects.Bind(waves);
             RunStatisticsService statistics = gameObject.AddComponent<RunStatisticsService>();
             statistics.Configure(waves, summon, progression);
             PlayerProfileService profile = gameObject.AddComponent<PlayerProfileService>();
