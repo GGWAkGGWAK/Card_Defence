@@ -26,11 +26,7 @@ namespace CardDefense.Core
 
         public int GetUpgradeCost(PokerHand hand)
         {
-            int level = GetLevel(hand);
-            float handTierFactor = 1f + ((int)hand * 0.35f);
-            double cost = config.baseHandUpgradeCost * handTierFactor *
-                          Math.Pow(config.handUpgradeCostGrowth, level);
-            return Mathf.Max(1, Mathf.CeilToInt((float)Math.Min(cost, int.MaxValue)));
+            return EndlessBalanceSimulator.CalculateUpgradeCost(config, hand, GetLevel(hand));
         }
 
         public float GetDamageMultiplier(PokerHand hand)

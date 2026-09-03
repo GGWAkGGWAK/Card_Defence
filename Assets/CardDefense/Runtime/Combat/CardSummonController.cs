@@ -22,7 +22,9 @@ namespace CardDefense.Combat
         public bool CanMergeSelection => selected.Count == 5 && !SelectedCardsContainExactDuplicate();
         public bool IsPlacementPending { get; private set; }
         public CardTower FocusedTower => focusedTower;
-        public int CurrentSummonCost => modifiers != null ? modifiers.GetSummonCost(config) : config.summonCost;
+        public int CurrentSummonCost => CalculateSummonCost(config,
+            towers != null ? towers.ActiveCount : 0,
+            modifiers != null ? modifiers.SummonCostMultiplier : 1f);
         public int AffordableSummons => economy != null ? economy.Gold / Mathf.Max(1, CurrentSummonCost) : 0;
 
         private readonly Queue<CardTower> available = new Queue<CardTower>(32);
@@ -44,6 +46,17 @@ namespace CardDefense.Combat
         private Vector2 dragStartScreen;
         private bool dragging;
         private bool dragWasSelected;
+
+        public static int CalculateSummonCost(GameBalanceConfig balance, int occupiedCardCount,
+            float discountMultiplier = 1f)
+        {
+            if (balance == null) return 0;
+            double discountedBase = balance.summonCost * Mathf.Clamp(discountMultiplier, 0.01f, 1f);
+            double occupancyGrowth = Math.Pow(balance.summonCostGrowthPerOccupiedCard,
+                Mathf.Max(0, occupiedCardCount));
+            return Mathf.Max(5, Mathf.CeilToInt((float)Math.Min(int.MaxValue,
+                discountedBase * occupancyGrowth)));
+        }
 
         public void Configure(CardTower towerPrefab, Transform[] placementSlots, EconomyService economyService,
             MonsterSystem monsterSystem, CardTowerSystem towerSystem, PokerProgressionService progressionService,

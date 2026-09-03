@@ -22,17 +22,18 @@ namespace CardDefense.Editor
 
             string directory = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Docs", "Balance");
             Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "round_balance_1_100.csv");
+            string path = Path.Combine(directory, "round_balance_1_150.csv");
             StringBuilder csv = new StringBuilder(16384);
-            csv.AppendLine("라운드,몬스터수,소환간격(초),웨이브소환시간(초),기본몬스터개별체력,특수포함총체력,획득가능골드,요구초당피해량(DPS),보스체력,보스보상골드,누적골드,누적골드기준소환횟수,A기준하이합성DPS,A원페어합성DPS,A로열합성DPS,요구하이타워수,요구원페어타워수,요구로열타워수");
+            csv.AppendLine("라운드,몬스터수,소환간격(초),웨이브소환시간(초),기본몬스터개별체력,특수포함총체력,획득가능골드,요구초당피해량(DPS),보스체력,보스보상골드,누적골드,누적골드기준소환횟수,A기준하이합성DPS,A원페어합성DPS,A로열합성DPS,요구하이타워수,요구원페어타워수,요구로열타워수,12카드상태소환비용,예산기반원페어강화레벨,예상원페어필드DPS,DPS충족률,경제압력");
             long cumulativeGold = config.startingGold;
             float highDps = ReferenceFusionDps(config, PokerHand.High, 0);
             float pairDps = ReferenceFusionDps(config, PokerHand.OnePair, 0);
             float royalDps = ReferenceFusionDps(config, PokerHand.RoyalStraightFlush, 0);
-            for (int round = 1; round <= 100; round++)
+            for (int round = 1; round <= 150; round++)
             {
                 RoundBalanceSnapshot row = RoundBalanceCalculator.Calculate(config, round);
                 AdjustedRoundBalanceSnapshot adjusted = AdjustedRoundBalanceCalculator.Calculate(config, round);
+                EndlessBalanceSnapshot simulation = EndlessBalanceSimulator.Calculate(config, round);
                 cumulativeGold += adjusted.PotentialGold;
                 csv.Append(row.Round).Append(',')
                     .Append(row.MonsterCount).Append(',')
@@ -53,7 +54,12 @@ namespace CardDefense.Editor
                     .Append(royalDps.ToString("0.00", CultureInfo.InvariantCulture)).Append(',')
                     .Append(Mathf.CeilToInt(adjusted.RequiredDps / highDps)).Append(',')
                     .Append(Mathf.CeilToInt(adjusted.RequiredDps / pairDps)).Append(',')
-                    .Append(Mathf.CeilToInt(adjusted.RequiredDps / royalDps))
+                    .Append(Mathf.CeilToInt(adjusted.RequiredDps / royalDps)).Append(',')
+                    .Append(CardSummonController.CalculateSummonCost(config, 12)).Append(',')
+                    .Append(simulation.ProjectedUpgradeLevel).Append(',')
+                    .Append(simulation.ProjectedReferenceDps.ToString("0.00", CultureInfo.InvariantCulture)).Append(',')
+                    .Append(simulation.DpsCoverage.ToString("0.0000", CultureInfo.InvariantCulture)).Append(',')
+                    .Append(simulation.EconomyPressure.ToString("0.0000", CultureInfo.InvariantCulture))
                     .AppendLine();
             }
             File.WriteAllText(path, csv.ToString(), new UTF8Encoding(true));
@@ -73,9 +79,7 @@ namespace CardDefense.Editor
                 PokerHandCombatProfile profile = PokerHandCombatProfile.Get(hand);
                 for (int level = 0; level <= 30; level++)
                 {
-                    float tierFactor = 1f + handIndex * 0.35f;
-                    int cost = Mathf.CeilToInt(config.baseHandUpgradeCost * tierFactor *
-                                               Mathf.Pow(config.handUpgradeCostGrowth, level));
+                    int cost = EndlessBalanceSimulator.CalculateUpgradeCost(config, hand, level);
                     csv.Append(PokerHandInfo.KoreanName(hand)).Append(',')
                         .Append(level).Append(',')
                         .Append(cost).Append(',')
