@@ -8,7 +8,16 @@ namespace CardDefense.Enemies
     {
         private readonly List<Monster> active = new List<Monster>(128);
 
-        public int ActiveCount => active.Count;
+        public int ActiveCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < active.Count; i++)
+                    if (active[i].IsAlive) count++;
+                return count;
+            }
+        }
 
         private void Update()
         {

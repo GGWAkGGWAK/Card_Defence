@@ -99,6 +99,36 @@ namespace CardDefense.Tests
         }
 
         [UnityTest]
+        public IEnumerator MonstersAnimateSpawnMovementHitAndDeathBeforeReturningToPool()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            Monster monster = Object.FindObjectOfType<Monster>();
+            MonsterSystem monsterSystem = Object.FindObjectOfType<MonsterSystem>();
+            Assert.IsNotNull(monster);
+            PrototypeVisual visual = monster.GetComponent<PrototypeVisual>();
+            Assert.IsNotNull(visual);
+            Assert.IsTrue(visual.IsSpawnAnimating);
+
+            Vector3 initialScale = monster.transform.localScale;
+            yield return new WaitForSeconds(0.08f);
+            Assert.AreNotEqual(initialScale, monster.transform.localScale);
+
+            int activeBeforeKill = monsterSystem.ActiveCount;
+            monster.TakeDamage(monster.MaxHealth * 2f);
+            Assert.IsFalse(monster.IsAlive);
+            Assert.IsTrue(monster.IsDying);
+            Assert.IsTrue(visual.IsDeathAnimating);
+            Assert.IsTrue(monster.gameObject.activeSelf, "Death animation must remain visible before pooling.");
+            Assert.AreEqual(activeBeforeKill - 1, monsterSystem.ActiveCount);
+
+            yield return new WaitForSeconds(0.65f);
+            Assert.IsFalse(monster.gameObject.activeSelf);
+        }
+
+        [UnityTest]
         public IEnumerator PerformanceModeCyclesAndPersistsFrameTargets()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);

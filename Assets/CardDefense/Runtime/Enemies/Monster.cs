@@ -11,6 +11,7 @@ namespace CardDefense.Enemies
         public float Health { get; private set; }
         public float MaxHealth { get; private set; }
         public MonsterArchetype Archetype { get; private set; }
+        public bool IsDying { get; private set; }
 
         private LoopPath path;
         private float moveSpeed;
@@ -19,6 +20,7 @@ namespace CardDefense.Enemies
         private Action<Monster, bool, int> releaseCallback;
         private MonsterHealthBar healthBar;
         private PrototypeVisual visual;
+        private float deathAnimationTimer;
 
         public void Spawn(LoopPath loopPath, MonsterArchetype archetype, float maxHealth,
             float speed, int killReward,
@@ -33,6 +35,8 @@ namespace CardDefense.Enemies
             releaseCallback = callback;
             progress = 0f;
             IsAlive = true;
+            IsDying = false;
+            deathAnimationTimer = 0f;
             transform.position = path.GetPosition(0f);
             gameObject.SetActive(true);
 
@@ -48,9 +52,18 @@ namespace CardDefense.Enemies
 
         public void Simulate(float deltaTime)
         {
+            if (IsDying)
+            {
+                deathAnimationTimer -= deltaTime;
+                if (deathAnimationTimer <= 0f) CompleteRelease(true);
+                return;
+            }
             if (!IsAlive || path == null || path.Length <= 0f) return;
+            Vector3 previousPosition = transform.position;
             progress += (moveSpeed / path.Length) * deltaTime;
             transform.position = path.GetPosition(progress);
+            if (visual != null)
+                visual.SetMonsterMoveDirection(transform.position - previousPosition);
         }
 
         public MonsterSnapshot CaptureSnapshot()
@@ -83,17 +96,28 @@ namespace CardDefense.Enemies
             Health -= amount;
             if (visual != null) visual.FlashHit();
             if (healthBar != null) healthBar.SetHealth(Health / MaxHealth);
-            if (Health <= 0f) RequestRelease(true);
+            if (Health <= 0f) BeginDeath();
         }
 
         public void ForceDespawn()
         {
-            if (IsAlive) RequestRelease(false);
+            if (IsAlive || IsDying) CompleteRelease(false);
         }
 
-        private void RequestRelease(bool defeated)
+        private void BeginDeath()
         {
             IsAlive = false;
+            IsDying = true;
+            if (healthBar != null) healthBar.Hide();
+            deathAnimationTimer = visual != null ? visual.PlayMonsterDeath() : 0f;
+            if (deathAnimationTimer <= 0f) CompleteRelease(true);
+        }
+
+        private void CompleteRelease(bool defeated)
+        {
+            IsAlive = false;
+            IsDying = false;
+            deathAnimationTimer = 0f;
             if (healthBar != null) healthBar.Hide();
             releaseCallback?.Invoke(this, defeated, defeated ? reward : 0);
             releaseCallback = null;
