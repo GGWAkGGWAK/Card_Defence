@@ -1,4 +1,5 @@
 using CardDefense.Cards;
+using CardDefense.Enemies;
 using UnityEngine;
 
 namespace CardDefense.Core
@@ -20,7 +21,16 @@ namespace CardDefense.Core
         private float animationPhase;
         private float hitFlashTimer;
         private float attackPulseTimer;
+        private float spawnAnimationTimer;
+        private float spawnAnimationDuration;
+        private float deathAnimationTimer;
+        private float deathAnimationDuration;
+        private Vector2 moveDirection = Vector2.right;
+        private MonsterArchetype monsterArchetype;
         private Vector3 cardRestScale = new Vector3(0.8f, 1.05f, 1f);
+
+        public bool IsSpawnAnimating => monsterMode && spawnAnimationTimer > 0f;
+        public bool IsDeathAnimating => monsterMode && deathAnimationTimer > 0f;
 
         private void Awake()
         {
@@ -30,7 +40,7 @@ namespace CardDefense.Core
             transform.localScale = new Vector3(size.x, size.y, 1f);
         }
 
-        public void SetMonsterStyle(CardDefense.Enemies.MonsterArchetype archetype)
+        public void SetMonsterStyle(MonsterArchetype archetype)
         {
             EnsureReady();
             Sprite art = VisualAssetLibrary.GetMonsterSprite(archetype);
@@ -39,7 +49,12 @@ namespace CardDefense.Core
             if (artMaterial != null) spriteRenderer.sharedMaterial = artMaterial;
             spriteRenderer.color = Color.white;
             monsterMode = true;
+            monsterArchetype = archetype;
             animationPhase = Random.value * Mathf.PI * 2f;
+            hitFlashTimer = 0f;
+            deathAnimationTimer = 0f;
+            deathAnimationDuration = 0f;
+            moveDirection = Vector2.right;
             switch (archetype)
             {
                 case CardDefense.Enemies.MonsterArchetype.Fast:
@@ -58,8 +73,29 @@ namespace CardDefense.Core
                     monsterScale = new Vector3(0.9f, 0.9f, 1f);
                     break;
             }
-            transform.localScale = monsterScale;
+            spawnAnimationDuration = archetype == MonsterArchetype.Boss ? 0.58f : 0.28f;
+            spawnAnimationTimer = spawnAnimationDuration;
+            transform.localScale = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
             spriteRenderer.sortingOrder = 2;
+        }
+
+        public void SetMonsterMoveDirection(Vector2 direction)
+        {
+            if (!monsterMode || direction.sqrMagnitude < 0.000001f) return;
+            moveDirection = direction.normalized;
+            if (Mathf.Abs(moveDirection.x) > 0.08f)
+                spriteRenderer.flipX = moveDirection.x < 0f;
+        }
+
+        public float PlayMonsterDeath()
+        {
+            if (!monsterMode) return 0f;
+            deathAnimationDuration = monsterArchetype == MonsterArchetype.Boss ? 0.52f : 0.34f;
+            deathAnimationTimer = deathAnimationDuration;
+            spawnAnimationTimer = 0f;
+            hitFlashTimer = 0f;
+            return deathAnimationDuration;
         }
 
         public void SetPlacementSlotStyle()
@@ -76,6 +112,8 @@ namespace CardDefense.Core
         {
             EnsureReady();
             monsterMode = false;
+            deathAnimationTimer = 0f;
+            spawnAnimationTimer = 0f;
             transform.localRotation = Quaternion.identity;
             spriteRenderer.sprite = VisualAssetLibrary.GetCardSprite(isFusionResult);
             cardColor = card.Suit == CardSuit.Heart || card.Suit == CardSuit.Diamond
@@ -141,15 +179,82 @@ namespace CardDefense.Core
                 if (attackPulseTimer <= 0f) transform.localScale = cardRestScale;
                 return;
             }
-            float pulse = 1f + Mathf.Sin(Time.time * 4.2f + animationPhase) * 0.035f;
-            transform.localScale = new Vector3(monsterScale.x * pulse, monsterScale.y * pulse, 1f);
+            float deltaTime = Time.deltaTime;
+            if (deathAnimationTimer > 0f)
+            {
+                deathAnimationTimer -= deltaTime;
+                float normalized = 1f - Mathf.Clamp01(deathAnimationTimer / deathAnimationDuration);
+                float remaining = 1f - normalized;
+                float stretch = 1f + Mathf.Sin(normalized * Mathf.PI) * 0.22f;
+                transform.localScale = new Vector3(monsterScale.x * remaining * stretch,
+                    monsterScale.y * remaining * (2f - stretch), 1f);
+                float spinDirection = moveDirection.x < 0f ? 1f : -1f;
+                transform.localRotation = Quaternion.Euler(0f, 0f,
+                    spinDirection * Mathf.Lerp(0f, 105f, normalized));
+                spriteRenderer.color = new Color(1f, Mathf.Lerp(0.48f, 0.08f, normalized),
+                    Mathf.Lerp(0.32f, 0.05f, normalized), remaining);
+                return;
+            }
+
+            float frequency = 4.2f;
+            float bounceAmount = 0.045f;
+            float swayAmount = 2.4f;
+            switch (monsterArchetype)
+            {
+                case MonsterArchetype.Fast:
+                    frequency = 8.4f;
+                    bounceAmount = 0.095f;
+                    swayAmount = 5f;
+                    break;
+                case MonsterArchetype.Tank:
+                    frequency = 2.3f;
+                    bounceAmount = 0.025f;
+                    swayAmount = 1.2f;
+                    break;
+                case MonsterArchetype.Gold:
+                    frequency = 5.4f;
+                    bounceAmount = 0.06f;
+                    swayAmount = 3.4f;
+                    break;
+                case MonsterArchetype.Boss:
+                    frequency = 1.9f;
+                    bounceAmount = 0.07f;
+                    swayAmount = 2f;
+                    break;
+            }
+
+            float wave = Mathf.Sin(Time.time * frequency + animationPhase);
+            float verticalPulse = 1f + wave * bounceAmount;
+            float horizontalPulse = 1f - wave * bounceAmount * 0.45f;
+            float hitKick = 0f;
+            if (hitFlashTimer > 0f)
+            {
+                hitFlashTimer -= deltaTime;
+                hitKick = Mathf.Sin(Mathf.Clamp01(hitFlashTimer / 0.09f) * Mathf.PI) * 0.18f;
+                spriteRenderer.color = new Color(1f, 0.32f, 0.22f, 1f);
+            }
+            else if (monsterArchetype == MonsterArchetype.Gold)
+            {
+                float shine = 0.88f + (wave + 1f) * 0.06f;
+                spriteRenderer.color = new Color(1f, shine, 0.72f, 1f);
+            }
+            else spriteRenderer.color = Color.white;
+
+            float spawnScale = 1f;
+            if (spawnAnimationTimer > 0f)
+            {
+                spawnAnimationTimer -= deltaTime;
+                float normalized = 1f - Mathf.Clamp01(spawnAnimationTimer / spawnAnimationDuration);
+                float overshoot = 1f + Mathf.Sin(normalized * Mathf.PI) *
+                                  (monsterArchetype == MonsterArchetype.Boss ? 0.28f : 0.16f);
+                spawnScale = Mathf.SmoothStep(0f, 1f, normalized) * overshoot;
+            }
+
+            transform.localScale = new Vector3(monsterScale.x * horizontalPulse * (1f + hitKick),
+                monsterScale.y * verticalPulse * (1f - hitKick * 0.55f), 1f) * spawnScale;
+            float travelLean = Mathf.Clamp(-moveDirection.x * moveDirection.y * 4f, -2.5f, 2.5f);
             transform.localRotation = Quaternion.Euler(0f, 0f,
-                Mathf.Sin(Time.time * 2.8f + animationPhase) * 2.2f);
-            if (hitFlashTimer <= 0f) return;
-            hitFlashTimer -= Time.deltaTime;
-            spriteRenderer.color = hitFlashTimer > 0f
-                ? new Color(1f, 0.38f, 0.28f, 1f)
-                : Color.white;
+                wave * swayAmount + travelLean + (moveDirection.x < 0f ? hitKick : -hitKick) * 35f);
         }
 
         private void EnsureReady()
