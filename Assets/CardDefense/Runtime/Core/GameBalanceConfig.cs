@@ -12,7 +12,10 @@ namespace CardDefense.Core
         [Min(0)] public int fusionSellBaseGold = 30;
         [Min(0)] public int fusionSellTierBonus = 8;
         [Min(1)] public int baseKillGold = 5;
-        [Min(1f)] public float rewardGrowthPerRound = 1.025f;
+        [Min(1f)] public float rewardGrowthPerRound = 1.022f;
+        [Min(1)] public int rewardSoftCapRound = 40;
+        [Min(1f)] public float lateRewardGrowthPerRound = 1.012f;
+        [Min(1f)] public float summonCostGrowthPerOccupiedCard = 1.045f;
 
         [Header("Risk Boss Quest")]
         [Min(5f)] public float bossQuestInitialCooldown = 25f;
@@ -40,6 +43,8 @@ namespace CardDefense.Core
         [Min(1f)] public float healthGrowthPerRound = 1.09f;
         [Min(0.1f)] public float monsterMoveSpeed = 1.6f;
         [Range(0f, 1f)] public float milestoneHealthBonus = 0.15f;
+        [Min(1)] public int healthAccelerationRound = 50;
+        [Min(1f)] public float lateHealthAccelerationPerRound = 1.006f;
 
         [Header("Monster Archetypes")]
         [Min(0.1f)] public float fastHealthMultiplier = 0.65f;
@@ -63,7 +68,7 @@ namespace CardDefense.Core
 
         [Header("Poker Progression")]
         [Min(1)] public int baseHandUpgradeCost = 40;
-        [Min(1f)] public float handUpgradeCostGrowth = 1.26f;
+        [Min(1f)] public float handUpgradeCostGrowth = 1.29f;
         [Min(0f)] public float handUpgradeDamageStep = 0.18f;
         [Min(0.1f)] public float towerSelectionRadius = 0.7f;
         [Min(1f)] public float cardDragThresholdPixels = 24f;

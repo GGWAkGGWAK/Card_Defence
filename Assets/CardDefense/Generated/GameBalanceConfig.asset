@@ -18,7 +18,10 @@ MonoBehaviour:
   fusionSellBaseGold: 30
   fusionSellTierBonus: 8
   baseKillGold: 5
-  rewardGrowthPerRound: 1.025
+  rewardGrowthPerRound: 1.022
+  rewardSoftCapRound: 40
+  lateRewardGrowthPerRound: 1.012
+  summonCostGrowthPerOccupiedCard: 1.045
   bossQuestInitialCooldown: 25
   bossQuestCooldown: 75
   bossQuestTimeLimit: 25
@@ -40,6 +43,8 @@ MonoBehaviour:
   healthGrowthPerRound: 1.09
   monsterMoveSpeed: 1.6
   milestoneHealthBonus: 0.15
+  healthAccelerationRound: 50
+  lateHealthAccelerationPerRound: 1.006
   fastHealthMultiplier: 0.65
   fastSpeedMultiplier: 1.8
   fastRewardMultiplier: 1.2
@@ -57,7 +62,7 @@ MonoBehaviour:
   targetRefreshInterval: 0.25
   discardedMaterialPowerRatio: 0.1
   baseHandUpgradeCost: 40
-  handUpgradeCostGrowth: 1.26
+  handUpgradeCostGrowth: 1.29
   handUpgradeDamageStep: 0.18
   towerSelectionRadius: 0.7
   cardDragThresholdPixels: 24
