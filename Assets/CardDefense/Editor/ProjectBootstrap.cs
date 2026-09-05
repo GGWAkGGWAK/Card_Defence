@@ -97,7 +97,7 @@ namespace CardDefense.Editor
         private static void ApplyCurrentBalance(GameBalanceConfig config)
         {
             config.rewardGrowthPerRound = 1.022f;
-            config.rewardSoftCapRound = 40;
+            config.rewardSoftCapRound = 20;
             config.lateRewardGrowthPerRound = 1.012f;
             config.summonCostGrowthPerOccupiedCard = 1.045f;
             config.healthAccelerationRound = 50;

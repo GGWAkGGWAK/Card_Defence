@@ -28,6 +28,8 @@ namespace CardDefense.Core
             double rawHealth = config.baseMonsterHealth *
                                Math.Pow(config.healthGrowthPerRound, round - 1) * milestone *
                                Math.Pow(config.lateHealthAccelerationPerRound, acceleratedHealthRounds);
+            // Gradual pressure after the tutorial boss; capped to avoid another exponential curve.
+            rawHealth *= 1d + Math.Min(20, Math.Max(0, round - 10)) * 0.025d;
             float health = rawHealth >= float.MaxValue ? float.MaxValue : (float)rawHealth;
             int rewardGrowthRounds = round - 1;
             int earlyRewardRounds = Math.Min(rewardGrowthRounds,

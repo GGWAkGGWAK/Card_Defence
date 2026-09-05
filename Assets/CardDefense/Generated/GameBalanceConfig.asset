@@ -19,7 +19,7 @@ MonoBehaviour:
   fusionSellTierBonus: 8
   baseKillGold: 5
   rewardGrowthPerRound: 1.022
-  rewardSoftCapRound: 40
+  rewardSoftCapRound: 20
   lateRewardGrowthPerRound: 1.012
   summonCostGrowthPerOccupiedCard: 1.045
   bossQuestInitialCooldown: 25
