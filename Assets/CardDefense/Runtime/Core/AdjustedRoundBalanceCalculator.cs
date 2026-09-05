@@ -29,7 +29,7 @@ namespace CardDefense.Core
             for (int spawnIndex = 0; spawnIndex < baseBalance.MonsterCount; spawnIndex++)
             {
                 MonsterArchetype archetype = MonsterArchetypeRules.Select(baseBalance.Round, spawnIndex);
-                MonsterArchetypeStats stats = MonsterArchetypeRules.GetStats(config, archetype);
+                MonsterArchetypeStats stats = MonsterArchetypeRules.GetRoundStats(config, archetype, baseBalance.Round);
                 double rawHealth = (double)baseBalance.HealthPerMonster * stats.HealthMultiplier;
                 float health = rawHealth >= float.MaxValue ? float.MaxValue : (float)rawHealth;
                 double rawReward = (double)baseBalance.RewardPerMonster * stats.RewardMultiplier;

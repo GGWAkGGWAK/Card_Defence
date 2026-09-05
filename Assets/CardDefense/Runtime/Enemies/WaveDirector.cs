@@ -95,7 +95,7 @@ namespace CardDefense.Enemies
             monster.transform.SetParent(null, true);
             RoundBalanceSnapshot balance = RoundBalanceCalculator.Calculate(config, round);
             MonsterArchetype archetype = MonsterArchetypeRules.Select(round, spawnIndex);
-            MonsterArchetypeStats stats = MonsterArchetypeRules.GetStats(config, archetype);
+            MonsterArchetypeStats stats = MonsterArchetypeRules.GetRoundStats(config, archetype, round);
             float health = balance.HealthPerMonster * stats.HealthMultiplier;
             float speed = config.monsterMoveSpeed * stats.SpeedMultiplier;
             int reward = Mathf.Max(1, Mathf.CeilToInt(balance.RewardPerMonster * stats.RewardMultiplier));

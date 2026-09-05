@@ -13,7 +13,7 @@ namespace CardDefense.Core
         [Min(0)] public int fusionSellTierBonus = 8;
         [Min(1)] public int baseKillGold = 5;
         [Min(1f)] public float rewardGrowthPerRound = 1.022f;
-        [Min(1)] public int rewardSoftCapRound = 40;
+        [Min(1)] public int rewardSoftCapRound = 20;
         [Min(1f)] public float lateRewardGrowthPerRound = 1.012f;
         [Min(1f)] public float summonCostGrowthPerOccupiedCard = 1.045f;
 

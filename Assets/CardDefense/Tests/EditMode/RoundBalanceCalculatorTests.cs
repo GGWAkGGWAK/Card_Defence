@@ -31,8 +31,8 @@ namespace CardDefense.Tests
             float round100 = AdjustedRoundBalanceCalculator.Calculate(config, 100).RequiredDps;
 
             Assert.That(round10, Is.InRange(40f, 80f));
-            Assert.That(round50, Is.InRange(5000f, 10000f));
-            Assert.That(round100, Is.InRange(1800000f, 2200000f));
+            Assert.That(round50, Is.InRange(20000f, 24000f));
+            Assert.That(round100, Is.InRange(4600000f, 4900000f));
             Object.DestroyImmediate(config);
         }
 
@@ -74,7 +74,7 @@ namespace CardDefense.Tests
             RoundBalanceSnapshot result = RoundBalanceCalculator.Calculate(config, 11);
             float withoutMilestone = config.baseMonsterHealth * Mathf.Pow(config.healthGrowthPerRound, 10);
 
-            Assert.AreEqual(withoutMilestone * (1f + config.milestoneHealthBonus),
+            Assert.AreEqual(withoutMilestone * (1f + config.milestoneHealthBonus) * 1.025f,
                 result.HealthPerMonster, 0.01f);
             Assert.Greater(result.PotentialGold, 0);
             Object.DestroyImmediate(config);

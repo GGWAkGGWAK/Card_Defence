@@ -27,6 +27,15 @@ namespace CardDefense.Enemies
 
     public static class MonsterArchetypeRules
     {
+        // Regular bosses only: the third boss checks whether the build has developed.
+        public static MonsterArchetypeStats GetRoundStats(GameBalanceConfig config, MonsterArchetype archetype, int round)
+        {
+            MonsterArchetypeStats stats = GetStats(config, archetype);
+            if (archetype == MonsterArchetype.Boss)
+                stats.HealthMultiplier *= round >= 30 ? 8f : round >= 20 ? 3f : 1f;
+            return stats;
+        }
+
         public static MonsterArchetype Select(int round, int spawnIndex)
         {
             if (round % 10 == 0 && spawnIndex == 0) return MonsterArchetype.Boss;

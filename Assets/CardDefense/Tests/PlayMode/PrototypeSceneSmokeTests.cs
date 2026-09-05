@@ -14,6 +14,26 @@ namespace CardDefense.Tests
 {
     public sealed class PrototypeSceneSmokeTests
     {
+        [UnityTest]
+        public IEnumerator RegularThirdBossUsesTheReportedHealthInGame()
+        {
+            yield return SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            yield return null;
+            var waves = Object.FindObjectOfType<WaveDirector>();
+            var config = Resources.FindObjectsOfTypeAll<GameBalanceConfig>()[0];
+            var snapshot = new WaveDirectorSnapshot { CurrentRound = 30, SecondsToNextRound = 20f };
+            snapshot.PendingBatches.Add(new WaveSpawnBatchSnapshot {
+                Round = 30, Remaining = 1, SpawnedCount = 0, TotalCount = 1 });
+            waves.RestoreSnapshot(snapshot, null);
+            yield return new WaitForSeconds(0.1f);
+            Monster boss = null;
+            foreach (var monster in Object.FindObjectsOfType<Monster>())
+                if (monster.IsAlive && monster.Archetype == MonsterArchetype.Boss) boss = monster;
+            Assert.IsNotNull(boss);
+            Assert.AreEqual(AdjustedRoundBalanceCalculator.Calculate(config, 30).BossHealth,
+                boss.MaxHealth, 0.1f);
+        }
+
         [UnitySetUp]
         public IEnumerator UseIsolatedRunSave()
         {
