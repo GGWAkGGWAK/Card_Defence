@@ -88,6 +88,7 @@ namespace CardDefense.Core
             Time.timeScale = 1f;
             SafeAreaFitter safeArea = hud.GetComponentInChildren<SafeAreaFitter>(true);
             Transform uiRoot = safeArea != null ? safeArea.Content : hud.transform;
+            path.EnableViewportSafety(Camera.main, 1.05f, 0.9f);
             VisualAssetLibrary.CreateArenaBackground();
             economy.Configure(config);
             progression.Configure(config, economy);

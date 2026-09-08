@@ -1,4 +1,5 @@
 using CardDefense.UI;
+using CardDefense.Enemies;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -26,6 +27,24 @@ namespace CardDefense.Tests.EditMode
 
             Assert.AreEqual(Vector2.zero, anchors[0]);
             Assert.AreEqual(Vector2.one, anchors[1]);
+        }
+
+        [Test]
+        public void PortraitViewportShrinksMonsterLoopToKeepBossesInsideScreen()
+        {
+            float cameraHalfWidth = 7.3f * (9f / 16f);
+            float scale = LoopPath.CalculateAxisScale(cameraHalfWidth, 1.05f, 3.7f);
+
+            Assert.Less(scale, 0.84f);
+            Assert.Greater(scale, 0.82f);
+            Assert.LessOrEqual(3.7f * scale + 1.05f, cameraHalfWidth + 0.001f);
+        }
+
+        [Test]
+        public void WideViewportKeepsOriginalMonsterLoopSize()
+        {
+            float cameraHalfWidth = 7.3f * (16f / 9f);
+            Assert.AreEqual(1f, LoopPath.CalculateAxisScale(cameraHalfWidth, 1.05f, 3.7f));
         }
     }
 }
