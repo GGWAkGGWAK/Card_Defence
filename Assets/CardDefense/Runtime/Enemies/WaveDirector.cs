@@ -33,6 +33,8 @@ namespace CardDefense.Enemies
         private Monster challengeBoss;
 
         public bool HasActiveChallengeBoss => challengeBoss != null && challengeBoss.IsAlive;
+        public bool IsChallengeBossDefeatPending => challengeBoss != null &&
+                                                     !challengeBoss.IsAlive && challengeBoss.IsDying;
         public float ChallengeBossHealthNormalized => HasActiveChallengeBoss
             ? Mathf.Clamp01(challengeBoss.Health / Mathf.Max(1f, challengeBoss.MaxHealth))
             : 0f;

@@ -31,11 +31,16 @@ namespace CardDefense.Core
         private MonsterArchetype monsterArchetype;
         private Color monsterAccentColor = Color.white;
         private Vector3 cardRestScale = new Vector3(0.8f, 1.05f, 1f);
+        private bool placementSlotMode;
+        private bool placementHighlighted;
+        private Color placementHighlightColor;
 
         public bool IsSpawnAnimating => monsterMode && spawnAnimationTimer > 0f;
         public bool IsDeathAnimating => monsterMode && deathAnimationTimer > 0f;
         public Color MonsterAccentColor => monsterAccentColor;
         public bool HasMonsterAura => monsterAura != null && monsterAura.enabled;
+        public bool IsPlacementSlot => placementSlotMode;
+        public bool IsPlacementHighlighted => placementHighlighted;
 
         private void Awake()
         {
@@ -107,11 +112,22 @@ namespace CardDefense.Core
         public void SetPlacementSlotStyle()
         {
             EnsureReady();
+            placementSlotMode = true;
             color = new Color(0.3f, 0.75f, 0.68f, 0.18f);
             size = new Vector2(0.95f, 1.2f);
             spriteRenderer.color = color;
             spriteRenderer.sortingOrder = -2;
             transform.localScale = new Vector3(size.x, size.y, 1f);
+        }
+
+        public void SetPlacementHighlight(bool highlighted, bool occupied)
+        {
+            if (!placementSlotMode) return;
+            placementHighlighted = highlighted;
+            placementHighlightColor = occupied
+                ? new Color(1f, 0.62f, 0.12f, 0.62f)
+                : new Color(0.15f, 1f, 0.68f, 0.7f);
+            spriteRenderer.color = highlighted ? placementHighlightColor : color;
         }
 
         public void SetCard(PlayingCard card, PokerHand hand, bool isFusionResult)
@@ -175,6 +191,16 @@ namespace CardDefense.Core
         private void Update()
         {
             if (spriteRenderer == null) return;
+            if (placementSlotMode)
+            {
+                if (placementHighlighted)
+                {
+                    Color pulseColor = placementHighlightColor;
+                    pulseColor.a *= 0.78f + Mathf.Sin(Time.unscaledTime * 6f) * 0.22f;
+                    spriteRenderer.color = pulseColor;
+                }
+                return;
+            }
             if (!monsterMode)
             {
                 if (attackPulseTimer <= 0f) return;
