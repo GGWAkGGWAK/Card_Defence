@@ -672,5 +672,67 @@ namespace CardDefense.Tests
             hud.ToggleSpeed();
             Assert.AreEqual(1f, Time.timeScale);
         }
+
+        [UnityTest]
+        public IEnumerator AttackImpactAndDamageTextAppearWhenProjectileArrives()
+        {
+            GameObject testObject = new GameObject("DeferredCombatFeedbackTest");
+            CombatEffectSystem effects = testObject.AddComponent<CombatEffectSystem>();
+            effects.Configure(8);
+            effects.PlayAttackFeedback(Vector3.zero, Vector3.right * 2f, 123f, false,
+                PokerHand.OnePair, CardSuit.Diamond);
+            GameObject damageText = testObject.transform.Find("DamageText_00").gameObject;
+
+            Assert.Greater(effects.ActiveProjectileCount, 0);
+            Assert.AreEqual(0, effects.ActiveImpactCount);
+            Assert.IsFalse(damageText.activeSelf);
+            yield return new WaitForSeconds(0.23f);
+            Assert.Greater(effects.ActiveImpactCount, 0);
+            Assert.IsTrue(damageText.activeSelf);
+            Assert.AreEqual("123", damageText.GetComponent<TextMesh>().text);
+            Object.Destroy(testObject);
+        }
+
+        [UnityTest]
+        public IEnumerator LethalChallengeBossHitCannotBecomeTimeoutFailureDuringDeathAnimation()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            WaveDirector waves = Object.FindObjectOfType<WaveDirector>();
+            Assert.IsTrue(waves.TrySpawnChallengeBoss());
+            Monster boss = null;
+            foreach (Monster candidate in Object.FindObjectsOfType<Monster>())
+                if (candidate.IsAlive && candidate.Archetype == MonsterArchetype.Boss) boss = candidate;
+            Assert.IsNotNull(boss);
+            boss.TakeDamage(boss.MaxHealth * 2f);
+            Assert.IsTrue(waves.IsChallengeBossDefeatPending);
+            yield return new WaitForSeconds(0.65f);
+            Assert.IsFalse(waves.IsChallengeBossDefeatPending);
+            Assert.IsFalse(waves.HasActiveChallengeBoss);
+        }
+
+        [UnityTest]
+        public IEnumerator PlacementHighlightsAndMobileBackCancellationAreAvailable()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            CardSummonController summon = Object.FindObjectOfType<CardSummonController>();
+            MobileBackController mobileBack = Object.FindObjectOfType<MobileBackController>();
+            Assert.IsNotNull(mobileBack);
+            summon.BeginSummonPlacement();
+            int highlighted = 0;
+            foreach (PrototypeVisual visual in Object.FindObjectsOfType<PrototypeVisual>())
+                if (visual.IsPlacementSlot && visual.IsPlacementHighlighted) highlighted++;
+            Assert.Greater(highlighted, 0);
+
+            mobileBack.HandleBackPressed();
+            Assert.IsFalse(summon.IsPlacementPending);
+            foreach (PrototypeVisual visual in Object.FindObjectsOfType<PrototypeVisual>())
+                if (visual.IsPlacementSlot) Assert.IsFalse(visual.IsPlacementHighlighted);
+        }
     }
 }

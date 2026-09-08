@@ -154,8 +154,8 @@ namespace CardDefense.Combat
                         damage * profile.SplashDamageMultiplier, hit);
                 if (effects != null)
                 {
-                    effects.PlayProjectile(transform.position, hitPosition, critical, Hand, Card.Suit);
-                    effects.PlayDamageNumber(hitPosition, dealtDamage, critical);
+                    effects.PlayAttackFeedback(transform.position, hitPosition, dealtDamage, critical,
+                        Hand, Card.Suit);
                 }
 
                 if (i == 0) first = hit;

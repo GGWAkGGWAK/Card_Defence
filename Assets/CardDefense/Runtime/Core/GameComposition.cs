@@ -131,10 +131,63 @@ namespace CardDefense.Core
             SettingsGuideController settingsUi = hud.gameObject.AddComponent<SettingsGuideController>();
             settingsUi.Configure(uiRoot, messageText != null ? messageText.font : null, startup,
                 settings, performance);
+            MobileBackController mobileBack = gameObject.AddComponent<MobileBackController>();
+            mobileBack.Configure(settingsUi, tutorial, summon, runSave, messageText);
             PresentationEffectController presentation = hud.gameObject.AddComponent<PresentationEffectController>();
             presentation.Configure(uiRoot, messageText != null ? messageText.font : null, summon, waves);
             UiThemeController theme = hud.gameObject.AddComponent<UiThemeController>();
             theme.Configure(uiRoot);
+        }
+    }
+
+    public sealed class MobileBackController : MonoBehaviour
+    {
+        public bool WaitingForExitConfirmation => exitConfirmUntil > Time.unscaledTime;
+
+        private SettingsGuideController settings;
+        private TutorialController tutorial;
+        private CardSummonController summon;
+        private RunSaveService runSave;
+        private Text message;
+        private float exitConfirmUntil;
+
+        public void Configure(SettingsGuideController settingsController, TutorialController tutorialController,
+            CardSummonController summonController, RunSaveService saveService, Text messageText)
+        {
+            settings = settingsController;
+            tutorial = tutorialController;
+            summon = summonController;
+            runSave = saveService;
+            message = messageText;
+        }
+
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape)) HandleBackPressed();
+        }
+
+        public void HandleBackPressed()
+        {
+            if (settings != null && settings.IsVisible)
+            {
+                settings.Close();
+                return;
+            }
+            if (tutorial != null && tutorial.IsVisible)
+            {
+                tutorial.SkipTutorial();
+                return;
+            }
+            if (summon != null && summon.CancelCurrentInteraction()) return;
+            if (WaitingForExitConfirmation)
+            {
+                if (runSave != null) runSave.SaveNow();
+                Application.Quit();
+                return;
+            }
+            if (runSave != null) runSave.SaveNow();
+            exitConfirmUntil = Time.unscaledTime + 2f;
+            if (message != null) message.text = "한 번 더 누르면 저장 후 게임을 종료합니다";
         }
     }
 }

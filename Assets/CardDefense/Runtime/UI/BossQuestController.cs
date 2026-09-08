@@ -60,7 +60,9 @@ namespace CardDefense.UI
             }
             if (IsActive)
             {
-                challengeRemaining -= Time.deltaTime;
+                // A lethal hit marks the monster dead before its pooled death animation finishes.
+                // Do not turn that short presentation window into an unfair timeout failure.
+                if (!waves.IsChallengeBossDefeatPending) challengeRemaining -= Time.deltaTime;
                 if (challengeRemaining <= 0f) FailQuest();
             }
             else if (cooldownRemaining > 0f)

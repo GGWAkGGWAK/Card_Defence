@@ -46,6 +46,8 @@ namespace CardDefense.Combat
         private Vector2 dragStartScreen;
         private bool dragging;
         private bool dragWasSelected;
+        private float pointerHoldTime;
+        private bool longPressDetailShown;
 
         public static int CalculateSummonCost(GameBalanceConfig balance, int occupiedCardCount,
             float discountMultiplier = 1f)
@@ -72,6 +74,11 @@ namespace CardDefense.Combat
             config = balance;
             effects = effectSystem;
             mainCamera = Camera.main;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                PrototypeVisual slotVisual = slots[i] != null ? slots[i].GetComponent<PrototypeVisual>() : null;
+                if (slotVisual != null) slotVisual.SetPlacementSlotStyle();
+            }
 
             GameObject root = new GameObject("CardTowerPool_Inactive");
             poolRoot = root.transform;
@@ -109,18 +116,27 @@ namespace CardDefense.Combat
                 dragStartScreen = screenPosition;
                 dragWasSelected = dragCandidate.IsSelected;
                 dragging = false;
+                pointerHoldTime = 0f;
+                longPressDetailShown = false;
             }
 
             if (dragCandidate != null && held)
             {
+                pointerHoldTime += Time.unscaledDeltaTime;
                 if (!dragging && (screenPosition - dragStartScreen).sqrMagnitude >=
                     config.cardDragThresholdPixels * config.cardDragThresholdPixels)
                 {
                     dragging = true;
                     dragCandidate.SetDragging(true);
                     dragCandidate.SetSelected(true);
+                    RefreshSlotHighlights(true);
                 }
                 if (dragging) dragCandidate.transform.position = world;
+                else if (!longPressDetailShown && pointerHoldTime >= 0.45f)
+                {
+                    longPressDetailShown = true;
+                    MessageChanged?.Invoke(GetTowerDetail(dragCandidate));
+                }
             }
 
             if (dragCandidate == null || !up) return;
@@ -135,6 +151,7 @@ namespace CardDefense.Combat
                 }
                 releasedTower.SetDragging(false);
                 releasedTower.SetSelected(dragWasSelected);
+                RefreshSlotHighlights(false);
             }
             else if (!IsPointerOverUi())
             {
@@ -188,6 +205,7 @@ namespace CardDefense.Combat
                 return;
             }
             IsPlacementPending = true;
+            RefreshSlotHighlights(true);
             MessageChanged?.Invoke("소환할 빈 슬롯을 선택하세요 (" + summonCost + "G)");
             SelectionChanged?.Invoke();
         }
@@ -315,7 +333,7 @@ namespace CardDefense.Combat
             string preview = selected.Count == 5
                 ? (SelectedCardsContainExactDuplicate()
                     ? "  |  합성 불가: 동일 카드 중복"
-                    : "  |  예상 " + PokerHandInfo.KoreanName(GetMergePreviewHand()))
+                    : "  |  " + GetMergePreviewSummary())
                 : string.Empty;
             return "선택 " + selected.Count + "/5  |  " + PokerHandInfo.KoreanName(hand) +
                    " Lv." + progression.GetLevel(hand) + "  |  강화 " + progression.GetUpgradeCost(hand) +
@@ -332,6 +350,47 @@ namespace CardDefense.Combat
                        ? "  |  핵심 " + focusedTower.FusionCoreCardCount + "장·잔여 " +
                          Mathf.RoundToInt(config.discardedMaterialPowerRatio * 100f) + "%"
                        : string.Empty);
+        }
+
+        public string GetMergePreviewSummary()
+        {
+            if (selected.Count != 5) return "합성 미리보기: 5장을 선택하세요";
+            if (SelectedCardsContainExactDuplicate()) return "합성 불가: 동일 카드 중복";
+            PlayingCard[] cards = new PlayingCard[5];
+            for (int i = 0; i < selected.Count; i++) cards[i] = selected[i].Card;
+            PokerHand hand = PokerHandEvaluator.Evaluate(cards);
+            PokerFusionCombatResult fusion = PokerFusionCombatCalculator.Calculate(config, cards, hand);
+            return "예상 " + PokerHandInfo.KoreanName(hand) + " · 대표 " +
+                   CardDisplayName(fusion.RepresentativeCard) + " · 기본 공격 " +
+                   fusion.BaseDamage.ToString("0.0") + " · 핵심 " + fusion.CoreCardCount + "장";
+        }
+
+        public string GetTowerDetail(CardTower tower)
+        {
+            if (tower == null) return string.Empty;
+            return CardDisplayName(tower.Card) + " · " + PokerHandInfo.KoreanName(tower.Hand) +
+                   (tower.IsFusionResult ? " 합성 완료" : " 원본 카드") + "\n공격 " +
+                   tower.CurrentDamage.ToString("0.0") + " · DPS " + tower.EstimatedDps.ToString("0.0") +
+                   " · 사거리 " + tower.CurrentRange.ToString("0.0") + " · " + tower.CombatTrait;
+        }
+
+        public bool CancelCurrentInteraction()
+        {
+            if (IsPlacementPending)
+            {
+                IsPlacementPending = false;
+                RefreshSlotHighlights(false);
+                MessageChanged?.Invoke("카드 배치를 취소했습니다");
+                SelectionChanged?.Invoke();
+                return true;
+            }
+            if (selected.Count == 0 && focusedTower == null) return false;
+            ClearMergeSelection();
+            if (focusedTower != null) focusedTower.SetSelected(false);
+            focusedTower = null;
+            SelectionChanged?.Invoke();
+            MessageChanged?.Invoke("선택을 해제했습니다");
+            return true;
         }
 
         public List<CardTowerSnapshot> CaptureTowers()
@@ -442,6 +501,7 @@ namespace CardDefense.Combat
             if (!economy.TrySpend(CurrentSummonCost))
             {
                 IsPlacementPending = false;
+                RefreshSlotHighlights(false);
                 MessageChanged?.Invoke("골드가 부족합니다");
                 SelectionChanged?.Invoke();
                 return;
@@ -452,6 +512,7 @@ namespace CardDefense.Combat
             SpawnTower(card, PokerHand.High, false, slotIndex);
             CardSummoned?.Invoke();
             IsPlacementPending = false;
+            RefreshSlotHighlights(false);
             MessageChanged?.Invoke("카드 배치: " + card.Rank + " / " + card.Suit);
             SelectionChanged?.Invoke();
         }
@@ -483,6 +544,27 @@ namespace CardDefense.Combat
                 bestIndex = i;
             }
             return bestIndex;
+        }
+
+        private void RefreshSlotHighlights(bool enabled)
+        {
+            if (slots == null) return;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                PrototypeVisual visual = slots[i] != null ? slots[i].GetComponent<PrototypeVisual>() : null;
+                if (visual != null) visual.SetPlacementHighlight(enabled, placedBySlot[i] != null);
+            }
+        }
+
+        private static string CardDisplayName(PlayingCard card)
+        {
+            string rank = card.Rank == CardRank.Ace ? "A" : card.Rank == CardRank.King ? "K" :
+                card.Rank == CardRank.Queen ? "Q" : card.Rank == CardRank.Jack ? "J" :
+                ((int)card.Rank).ToString();
+            string suit = card.Suit == CardSuit.Spade ? "스페이드" :
+                card.Suit == CardSuit.Diamond ? "다이아몬드" :
+                card.Suit == CardSuit.Heart ? "하트" : "클로버";
+            return suit + " " + rank;
         }
 
         private void ClearMergeSelection()

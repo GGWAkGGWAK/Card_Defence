@@ -147,7 +147,16 @@ namespace CardDefense.Combat
                 Color color = projectile.Color;
                 color.a = 1f - Mathf.Clamp01((normalized - 0.82f) / 0.18f);
                 projectile.Renderer.color = color;
-                if (projectile.Remaining <= 0f) projectile.Renderer.enabled = false;
+                if (projectile.Remaining <= 0f)
+                {
+                    projectile.Renderer.enabled = false;
+                    if (projectile.TriggerImpact)
+                    {
+                        projectile.TriggerImpact = false;
+                        SpawnImpact(projectile.End, projectile.Color, projectile.Critical, projectile.Hand);
+                        PlayDamageNumber(projectile.End, projectile.DamageAmount, projectile.Critical);
+                    }
+                }
                 else ActiveProjectileCount++;
             }
             for (int i = 0; i < beams.Length; i++)
@@ -209,6 +218,18 @@ namespace CardDefense.Combat
 
         public void PlayProjectile(Vector3 from, Vector3 to, bool critical, PokerHand hand, CardSuit suit)
         {
+            LaunchProjectile(from, to, critical, hand, suit, 0f, false);
+        }
+
+        public void PlayAttackFeedback(Vector3 from, Vector3 to, float damageAmount, bool critical,
+            PokerHand hand, CardSuit suit)
+        {
+            LaunchProjectile(from, to, critical, hand, suit, damageAmount, true);
+        }
+
+        private void LaunchProjectile(Vector3 from, Vector3 to, bool critical, PokerHand hand,
+            CardSuit suit, float damageAmount, bool deferImpact)
+        {
             if (beams == null || beams.Length == 0) return;
             LastPlayedHand = hand;
             LastPlayedSuit = suit;
@@ -234,6 +255,10 @@ namespace CardDefense.Combat
             projectile.Renderer.transform.localScale = Vector3.one * projectile.Size;
             projectile.Renderer.color = color;
             projectile.Renderer.enabled = true;
+            projectile.TriggerImpact = deferImpact;
+            projectile.Critical = critical;
+            projectile.Hand = hand;
+            projectile.DamageAmount = damageAmount;
             ActiveProjectileCount++;
 
             BeamEffect beam = beams[nextBeam];
@@ -247,6 +272,11 @@ namespace CardDefense.Combat
             beam.Line.enabled = true;
             PlayAttackAudio(critical, hand);
 
+            if (!deferImpact) SpawnImpact(to, color, critical, hand);
+        }
+
+        private void SpawnImpact(Vector3 to, Color color, bool critical, PokerHand hand)
+        {
             effectSequence++;
             if (!critical && effectQuality < 0.6f && (effectSequence & 1) == 0) return;
             ImpactEffect impact = impacts[nextImpact];
@@ -455,6 +485,10 @@ namespace CardDefense.Combat
             public float SpinSpeed;
             public float Duration;
             public float Remaining;
+            public bool TriggerImpact;
+            public bool Critical;
+            public PokerHand Hand;
+            public float DamageAmount;
             public ProjectileEffect(SpriteRenderer renderer) { Renderer = renderer; }
         }
 

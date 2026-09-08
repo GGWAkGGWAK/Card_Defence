@@ -75,6 +75,11 @@ namespace CardDefense.Core
             if (paused && configured && !waves.IsGameOver) SaveNow();
         }
 
+        private void OnApplicationFocus(bool focused)
+        {
+            if (!focused && configured && !waves.IsGameOver) SaveNow();
+        }
+
         private void OnApplicationQuit()
         {
             if (configured && !waves.IsGameOver) SaveNow();
