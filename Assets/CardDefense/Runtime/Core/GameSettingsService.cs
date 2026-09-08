@@ -16,6 +16,9 @@ namespace CardDefense.Core
         public float BgmVolume { get; private set; }
         public float SfxVolume { get; private set; }
         public bool IsBgmPlaying => bgmSource != null && bgmSource.isPlaying;
+        public float EffectiveBgmVolume => bgmSource != null ? bgmSource.volume : 0f;
+        public float BgmClipDuration => bgmSource != null && bgmSource.clip != null ? bgmSource.clip.length : 0f;
+        public float BgmSignalRms { get; private set; }
 
 #if UNITY_EDITOR
         public static string EditorSettingsPrefixOverride;
@@ -66,8 +69,10 @@ namespace CardDefense.Core
             bgmSource.spatialBlend = 0f;
             bgmSource.priority = 32;
             bgmSource.ignoreListenerPause = true;
-            bgmSource.volume = 0.62f * BgmVolume;
-            bgmSource.clip = CreateAmbientLoop();
+            bgmSource.dopplerLevel = 0f;
+            bgmSource.volume = 0.82f * BgmVolume;
+            bgmSource.clip = CreateDefenseTheme(out float signalRms);
+            BgmSignalRms = signalRms;
             sfxSource = gameObject.AddComponent<AudioSource>();
             sfxSource.playOnAwake = false;
             sfxSource.volume = 0.42f * SfxVolume;
@@ -125,7 +130,8 @@ namespace CardDefense.Core
             BgmVolume = Mathf.Clamp01(volume);
             PlayerPrefs.SetFloat(Prefix + "BgmVolume", BgmVolume);
             PlayerPrefs.Save();
-            if (bgmSource != null) bgmSource.volume = 0.62f * BgmVolume;
+            if (bgmSource != null) bgmSource.volume = 0.82f * BgmVolume;
+            if (BgmEnabled && BgmVolume > 0f) ApplyBgm();
         }
 
         public void SetSfxVolume(float volume)
@@ -195,6 +201,17 @@ namespace CardDefense.Core
             else bgmSource.Stop();
         }
 
+        private void Update()
+        {
+            if (BgmEnabled && BgmVolume > 0f && bgmSource != null && bgmSource.clip != null &&
+                !bgmSource.isPlaying) bgmSource.Play();
+        }
+
+        private void OnApplicationFocus(bool focused)
+        {
+            if (focused) ApplyBgm();
+        }
+
         private void Play(AudioClip clip)
         {
             if (!SfxEnabled || sfxSource == null || clip == null) return;
@@ -247,29 +264,70 @@ namespace CardDefense.Core
             return clip;
         }
 
-        private static AudioClip CreateAmbientLoop()
+        private static AudioClip CreateDefenseTheme(out float signalRms)
         {
             const int sampleRate = 22050;
-            const float duration = 12f;
-            int count = Mathf.CeilToInt(sampleRate * duration);
-            float[] data = new float[count];
-            float[] notes = { 110f, 130.81f, 164.81f, 196f, 164.81f, 130.81f,
-                              98f, 123.47f, 146.83f, 185f, 146.83f, 123.47f };
-            for (int i = 0; i < count; i++)
+            const float duration = 16f;
+            const int channels = 2;
+            int frameCount = Mathf.CeilToInt(sampleRate * duration);
+            float[] data = new float[frameCount * channels];
+            float[] chordRoots = { 110f, 98f, 82.41f, 87.31f };
+            float sumSquares = 0f;
+            uint noiseState = 0x9E3779B9u;
+            for (int i = 0; i < frameCount; i++)
             {
                 float time = i / (float)sampleRate;
-                int beat = Mathf.FloorToInt(time) % notes.Length;
-                float phase = time - Mathf.Floor(time);
-                float pluck = Mathf.Pow(1f - phase, 2.2f);
-                float pad = 0.5f - 0.5f * Mathf.Cos(Mathf.PI * 2f * time / duration);
-                float root = notes[beat];
-                float sample = Mathf.Sin(2f * Mathf.PI * root * time) * pluck * 0.12f;
-                sample += Mathf.Sin(2f * Mathf.PI * root * 1.5f * time) * pluck * 0.05f;
-                sample += Mathf.Sin(2f * Mathf.PI * 55f * time) * (0.035f + pad * 0.015f);
-                sample += Mathf.Sin(2f * Mathf.PI * (root * 0.5f) * time) * 0.035f;
-                data[i] = Mathf.Clamp(sample * 2.15f, -0.82f, 0.82f);
+                float beatTime = time * 2f;
+                int beatIndex = Mathf.FloorToInt(beatTime);
+                float beatPhase = beatTime - beatIndex;
+                int bar = (beatIndex / 4) % 4;
+                float root = chordRoots[bar];
+
+                float padMotion = 0.72f + 0.28f * Mathf.Sin(2f * Mathf.PI * time / 8f);
+                float pad = Mathf.Sin(2f * Mathf.PI * root * time) * 0.105f;
+                pad += Mathf.Sin(2f * Mathf.PI * root * 1.2f * time) * 0.075f;
+                pad += Mathf.Sin(2f * Mathf.PI * root * 1.5f * time) * 0.065f;
+                pad *= padMotion;
+
+                float bassEnvelope = Mathf.Pow(1f - beatPhase, 1.7f);
+                float bass = Mathf.Sin(2f * Mathf.PI * root * 0.5f * time) * bassEnvelope * 0.24f;
+
+                int eighth = Mathf.FloorToInt(time * 4f);
+                float eighthPhase = time * 4f - eighth;
+                float[] melodyRatios = { 2f, 2.4f, 3f, 2.4f, 3.2f, 3f, 2.4f, 2f };
+                float melodyFrequency = root * melodyRatios[eighth & 7];
+                float melodyEnvelope = Mathf.Pow(1f - eighthPhase, 3.1f);
+                float melody = Mathf.Sin(2f * Mathf.PI * melodyFrequency * time) *
+                               melodyEnvelope * 0.19f;
+                melody += Mathf.Sin(2f * Mathf.PI * melodyFrequency * 2f * time) *
+                          melodyEnvelope * 0.045f;
+
+                float kickFrequency = Mathf.Lerp(105f, 43f, Mathf.Clamp01(beatPhase * 5f));
+                float kick = Mathf.Sin(2f * Mathf.PI * kickFrequency * time) *
+                             Mathf.Exp(-beatPhase * 13f) * (beatIndex % 4 == 0 ? 0.44f : 0.3f);
+
+                noiseState = noiseState * 1664525u + 1013904223u;
+                float noise = ((noiseState >> 8) / 16777215f) * 2f - 1f;
+                float snare = (beatIndex & 1) == 1
+                    ? noise * Mathf.Exp(-beatPhase * 17f) * 0.22f
+                    : 0f;
+                float hatPhase = time * 8f - Mathf.Floor(time * 8f);
+                float hat = noise * Mathf.Exp(-hatPhase * 28f) * 0.065f;
+
+                float loopFade = Mathf.Clamp01(time / 0.055f) *
+                                 Mathf.Clamp01((duration - time) / 0.055f);
+                float rhythm = kick + snare + hat;
+                float left = (pad + bass + rhythm + melody * (eighth % 2 == 0 ? 0.72f : 1f)) * loopFade;
+                float right = (pad * 0.96f + bass + rhythm + melody * (eighth % 2 == 0 ? 1f : 0.72f)) *
+                              loopFade;
+                left = Mathf.Clamp(left, -0.92f, 0.92f);
+                right = Mathf.Clamp(right, -0.92f, 0.92f);
+                data[i * channels] = left;
+                data[i * channels + 1] = right;
+                sumSquares += left * left + right * right;
             }
-            AudioClip clip = AudioClip.Create("PrototypeAmbient", count, 1, sampleRate, false);
+            signalRms = Mathf.Sqrt(sumSquares / Mathf.Max(1, data.Length));
+            AudioClip clip = AudioClip.Create("CardDefenseBattleTheme", frameCount, channels, sampleRate, false);
             clip.SetData(data, 0);
             return clip;
         }

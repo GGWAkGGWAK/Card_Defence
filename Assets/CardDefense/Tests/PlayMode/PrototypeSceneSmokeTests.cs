@@ -105,6 +105,10 @@ namespace CardDefense.Tests
             GameSettingsService audioSettings = Object.FindObjectOfType<GameSettingsService>();
             Assert.IsTrue(audioSettings.BgmEnabled);
             Assert.IsTrue(audioSettings.IsBgmPlaying);
+            Assert.GreaterOrEqual(audioSettings.BgmClipDuration, 15.9f);
+            Assert.Greater(audioSettings.BgmSignalRms, 0.08f,
+                "The background theme must be clearly audible, not only technically playing.");
+            Assert.Greater(audioSettings.EffectiveBgmVolume, 0.45f);
             Material monsterMaterial = VisualAssetLibrary.GetMonsterMaterial();
             Assert.IsNotNull(monsterMaterial);
             Assert.GreaterOrEqual(monsterMaterial.GetFloat("_Tolerance"), 0.2f);
