@@ -738,5 +738,26 @@ namespace CardDefense.Tests
             foreach (PrototypeVisual visual in Object.FindObjectsOfType<PrototypeVisual>())
                 if (visual.IsPlacementSlot) Assert.IsFalse(visual.IsPlacementHighlighted);
         }
+
+        [UnityTest]
+        public IEnumerator PortraitViewportKeepsWholeMonsterLoopInsideCameraWithBossPadding()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            Camera camera = Camera.main;
+            LoopPath loop = Object.FindObjectOfType<LoopPath>();
+            camera.aspect = 9f / 16f;
+            loop.EnableViewportSafety(camera, 1.05f, 0.9f);
+
+            float cameraHalfWidth = camera.orthographicSize * camera.aspect;
+            Assert.Less(loop.HorizontalViewportScale, 1f);
+            for (int i = 0; i < 64; i++)
+            {
+                Vector3 point = loop.GetPosition(i / 64f);
+                Assert.LessOrEqual(Mathf.Abs(point.x) + 1.05f, cameraHalfWidth + 0.001f);
+            }
+        }
     }
 }
