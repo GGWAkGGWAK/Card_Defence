@@ -98,6 +98,8 @@ namespace CardDefense.Core
             CombatEffectSystem effects = gameObject.AddComponent<CombatEffectSystem>();
             effects.Configure(32);
             summon.Configure(towerPrefab, placementSlots, economy, monsters, towers, progression, config, effects);
+            HandleViewportScaleChanged(path.HorizontalViewportScale, path.VerticalViewportScale);
+            path.ViewportScaleChanged += HandleViewportScaleChanged;
             summon.SetRunModifiers(modifiers);
             waves.Configure(config, path, monsterPool, monsters, economy);
             waves.SetRunModifiers(modifiers);
@@ -138,6 +140,17 @@ namespace CardDefense.Core
             presentation.Configure(uiRoot, messageText != null ? messageText.font : null, summon, waves);
             UiThemeController theme = hud.gameObject.AddComponent<UiThemeController>();
             theme.Configure(uiRoot);
+        }
+
+        private void OnDestroy()
+        {
+            if (path != null) path.ViewportScaleChanged -= HandleViewportScaleChanged;
+        }
+
+        private void HandleViewportScaleChanged(float horizontalScale, float verticalScale)
+        {
+            if (summon != null) summon.ApplyViewportScale(horizontalScale, verticalScale);
+            VisualAssetLibrary.FitArenaBackgroundToCamera(Camera.main);
         }
     }
 

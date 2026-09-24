@@ -28,6 +28,7 @@ namespace CardDefense.Core
             renderer.sortingOrder = -100;
             renderer.color = new Color(0.72f, 0.82f, 0.82f, 1f);
             background.transform.position = new Vector3(0f, 0f, 2f);
+            FitArenaBackgroundToCamera(Camera.main);
 
             LoopPath loop = Object.FindObjectOfType<LoopPath>();
             LineRenderer route = loop != null ? loop.GetComponent<LineRenderer>() : null;
@@ -38,6 +39,20 @@ namespace CardDefense.Core
                 route.startColor = new Color(0.2f, 0.9f, 0.92f, 0.38f);
                 route.endColor = route.startColor;
             }
+        }
+
+        public static void FitArenaBackgroundToCamera(Camera camera)
+        {
+            if (camera == null || !camera.orthographic) return;
+            GameObject background = GameObject.Find("CasinoArenaBackground");
+            SpriteRenderer renderer = background != null ? background.GetComponent<SpriteRenderer>() : null;
+            if (renderer == null || renderer.sprite == null) return;
+            Vector2 spriteSize = renderer.sprite.bounds.size;
+            float requiredHeight = camera.orthographicSize * 2f;
+            float requiredWidth = requiredHeight * camera.aspect;
+            float scale = Mathf.Max(requiredWidth / Mathf.Max(0.01f, spriteSize.x),
+                requiredHeight / Mathf.Max(0.01f, spriteSize.y));
+            background.transform.localScale = new Vector3(scale, scale, 1f);
         }
 
         public static Sprite GetMonsterSprite(MonsterArchetype archetype)

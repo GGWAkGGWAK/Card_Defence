@@ -26,6 +26,7 @@ namespace CardDefense.Combat
             towers != null ? towers.ActiveCount : 0,
             modifiers != null ? modifiers.SummonCostMultiplier : 1f);
         public int AffordableSummons => economy != null ? economy.Gold / Mathf.Max(1, CurrentSummonCost) : 0;
+        public int PlacementSlotCount => slots != null ? slots.Length : 0;
 
         private readonly Queue<CardTower> available = new Queue<CardTower>(32);
         private readonly List<CardTower> selected = new List<CardTower>(5);
@@ -48,6 +49,7 @@ namespace CardDefense.Combat
         private bool dragWasSelected;
         private float pointerHoldTime;
         private bool longPressDetailShown;
+        private Vector3[] baseSlotLocalPositions;
 
         public static int CalculateSummonCost(GameBalanceConfig balance, int occupiedCardCount,
             float discountMultiplier = 1f)
@@ -67,6 +69,7 @@ namespace CardDefense.Combat
             prefab = towerPrefab;
             slots = placementSlots;
             placedBySlot = new CardTower[slots.Length];
+            baseSlotLocalPositions = new Vector3[slots.Length];
             economy = economyService;
             monsters = monsterSystem;
             towers = towerSystem;
@@ -76,6 +79,7 @@ namespace CardDefense.Combat
             mainCamera = Camera.main;
             for (int i = 0; i < slots.Length; i++)
             {
+                if (slots[i] != null) baseSlotLocalPositions[i] = slots[i].localPosition;
                 PrototypeVisual slotVisual = slots[i] != null ? slots[i].GetComponent<PrototypeVisual>() : null;
                 if (slotVisual != null) slotVisual.SetPlacementSlotStyle();
             }
@@ -350,6 +354,30 @@ namespace CardDefense.Combat
                        ? "  |  핵심 " + focusedTower.FusionCoreCardCount + "장·잔여 " +
                          Mathf.RoundToInt(config.discardedMaterialPowerRatio * 100f) + "%"
                        : string.Empty);
+        }
+
+        public void ApplyViewportScale(float horizontalScale, float verticalScale)
+        {
+            if (slots == null || baseSlotLocalPositions == null) return;
+            horizontalScale = Mathf.Clamp(horizontalScale, 0.45f, 1f);
+            verticalScale = Mathf.Clamp(verticalScale, 0.75f, 1f);
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] == null) continue;
+                Vector3 source = baseSlotLocalPositions[i];
+                slots[i].localPosition = new Vector3(source.x * horizontalScale,
+                    source.y * verticalScale, source.z);
+                CardTower tower = placedBySlot[i];
+                if (tower != null) tower.MoveToSlot(i, slots[i].position);
+            }
+            SelectionChanged?.Invoke();
+        }
+
+        public Vector3 GetPlacementSlotPosition(int index)
+        {
+            return slots != null && index >= 0 && index < slots.Length && slots[index] != null
+                ? slots[index].position
+                : Vector3.zero;
         }
 
         public string GetMergePreviewSummary()
