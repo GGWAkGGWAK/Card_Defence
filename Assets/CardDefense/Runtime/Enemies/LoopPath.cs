@@ -1,9 +1,11 @@
+using System;
 using UnityEngine;
 
 namespace CardDefense.Enemies
 {
     public sealed class LoopPath : MonoBehaviour
     {
+        public event Action<float, float> ViewportScaleChanged;
         [SerializeField] private Transform[] waypoints;
 
         private Vector3[] points;
@@ -13,6 +15,8 @@ namespace CardDefense.Enemies
         private float horizontalPadding;
         private float verticalPadding;
         private float lastAspect = -1f;
+        private float baseCameraOrthographicSize;
+        private const float MinimumHorizontalPathScale = 0.82f;
 
         public float Length { get; private set; }
         public float HorizontalViewportScale { get; private set; } = 1f;
@@ -40,6 +44,8 @@ namespace CardDefense.Enemies
             float requiredVerticalPadding)
         {
             viewportCamera = targetCamera;
+            if (viewportCamera != null && baseCameraOrthographicSize <= 0f)
+                baseCameraOrthographicSize = viewportCamera.orthographicSize;
             horizontalPadding = Mathf.Max(0f, requiredHorizontalPadding);
             verticalPadding = Mathf.Max(0f, requiredVerticalPadding);
             CaptureBaseWaypoints();
@@ -117,10 +123,15 @@ namespace CardDefense.Enemies
                 sourceHalfWidth = Mathf.Max(sourceHalfWidth, Mathf.Abs(baseLocalWaypoints[i].x));
                 sourceHalfHeight = Mathf.Max(sourceHalfHeight, Mathf.Abs(baseLocalWaypoints[i].y));
             }
-            float cameraHalfHeight = viewportCamera.orthographicSize;
-            float cameraHalfWidth = cameraHalfHeight * viewportCamera.aspect;
-            HorizontalViewportScale = CalculateAxisScale(cameraHalfWidth, horizontalPadding, sourceHalfWidth);
-            VerticalViewportScale = CalculateAxisScale(cameraHalfHeight, verticalPadding, sourceHalfHeight);
+            float baseHalfHeight = Mathf.Max(0.5f, baseCameraOrthographicSize);
+            float baseHalfWidth = baseHalfHeight * viewportCamera.aspect;
+            float naturalHorizontalScale = CalculateAxisScale(baseHalfWidth, horizontalPadding, sourceHalfWidth);
+            HorizontalViewportScale = Mathf.Max(MinimumHorizontalPathScale, naturalHorizontalScale);
+            VerticalViewportScale = CalculateAxisScale(baseHalfHeight, verticalPadding, sourceHalfHeight);
+            float requiredForWidth = (sourceHalfWidth * HorizontalViewportScale + horizontalPadding) /
+                                     Mathf.Max(0.1f, viewportCamera.aspect);
+            float requiredForHeight = sourceHalfHeight * VerticalViewportScale + verticalPadding;
+            viewportCamera.orthographicSize = Mathf.Max(baseHalfHeight, requiredForWidth, requiredForHeight);
             for (int i = 0; i < waypoints.Length; i++)
             {
                 Vector3 source = baseLocalWaypoints[i];
@@ -130,6 +141,7 @@ namespace CardDefense.Enemies
             lastAspect = viewportCamera.aspect;
             RebuildCache();
             RefreshLineRenderer();
+            ViewportScaleChanged?.Invoke(HorizontalViewportScale, VerticalViewportScale);
         }
 
         private void RefreshLineRenderer()

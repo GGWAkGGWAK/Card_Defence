@@ -740,7 +740,7 @@ namespace CardDefense.Tests
         }
 
         [UnityTest]
-        public IEnumerator PortraitViewportKeepsWholeMonsterLoopInsideCameraWithBossPadding()
+        public IEnumerator CommonAndroidViewportsKeepRouteSlotsTowersAndBackgroundInsideSafeLayout()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
             while (!load.isDone) yield return null;
@@ -748,16 +748,39 @@ namespace CardDefense.Tests
 
             Camera camera = Camera.main;
             LoopPath loop = Object.FindObjectOfType<LoopPath>();
-            camera.aspect = 9f / 16f;
-            loop.EnableViewportSafety(camera, 1.05f, 0.9f);
-
-            float cameraHalfWidth = camera.orthographicSize * camera.aspect;
-            Assert.Less(loop.HorizontalViewportScale, 1f);
-            for (int i = 0; i < 64; i++)
+            CardSummonController summon = Object.FindObjectOfType<CardSummonController>();
+            summon.SummonForTesting(new PlayingCard(CardSuit.Spade, CardRank.Ace));
+            CardTower tower = Object.FindObjectOfType<CardTower>();
+            float[] aspects = { 9f / 16f, 9f / 19.5f, 9f / 20f, 3f / 4f, 16f / 9f };
+            float maximumOrthographicSize = camera.orthographicSize;
+            for (int profile = 0; profile < aspects.Length; profile++)
             {
-                Vector3 point = loop.GetPosition(i / 64f);
-                Assert.LessOrEqual(Mathf.Abs(point.x) + 1.05f, cameraHalfWidth + 0.001f);
+                camera.aspect = aspects[profile];
+                loop.EnableViewportSafety(camera, 1.05f, 0.9f);
+                maximumOrthographicSize = Mathf.Max(maximumOrthographicSize, camera.orthographicSize);
+                float cameraHalfWidth = camera.orthographicSize * camera.aspect;
+                for (int i = 0; i < 64; i++)
+                {
+                    Vector3 point = loop.GetPosition(i / 64f);
+                    Assert.LessOrEqual(Mathf.Abs(point.x) + 1.05f, cameraHalfWidth + 0.001f,
+                        "Route escaped viewport for aspect " + aspects[profile]);
+                }
+
+                float routeRight = loop.GetPosition(0f).x;
+                float outerSlotRight = float.MinValue;
+                for (int i = 0; i < summon.PlacementSlotCount; i++)
+                    outerSlotRight = Mathf.Max(outerSlotRight, summon.GetPlacementSlotPosition(i).x);
+                Assert.GreaterOrEqual(routeRight - outerSlotRight, 1.28f,
+                    "Boss route overlaps the outer card column for aspect " + aspects[profile]);
+                Assert.AreEqual(summon.GetPlacementSlotPosition(tower.SlotIndex).x,
+                    tower.transform.position.x, 0.001f, "Placed tower did not follow viewport relayout.");
+
+                SpriteRenderer background = GameObject.Find("CasinoArenaBackground").GetComponent<SpriteRenderer>();
+                Assert.GreaterOrEqual(background.bounds.extents.x, cameraHalfWidth - 0.001f);
+                Assert.GreaterOrEqual(background.bounds.extents.y, camera.orthographicSize - 0.001f);
             }
+            Assert.Greater(maximumOrthographicSize, 8.8f,
+                "Very tall Android screens should use camera expansion instead of over-compressing cards.");
         }
     }
 }
