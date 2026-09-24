@@ -20,12 +20,13 @@ namespace CardDefense.Combat
         private float effectQuality = 0.75f;
         private int effectSequence;
         private AudioSource attackAudio;
-        private AudioClip basicAttackClip;
-        private AudioClip fusionAttackClip;
+        private AudioClip[] basicAttackClips;
+        private AudioClip[] fusionAttackClips;
         private AudioClip criticalAttackClip;
         private bool sfxEnabled = true;
         private float sfxVolume = 0.8f;
         private float nextAttackAudioTime;
+        private int attackAudioSequence;
         private Camera shakeCamera;
         private Vector3 cameraRestPosition;
         private float shakeRemaining;
@@ -39,6 +40,7 @@ namespace CardDefense.Combat
         public int ActiveProjectileCount { get; private set; }
         public int ActiveImpactCount { get; private set; }
         public int ActiveRewardTextCount { get; private set; }
+        public int LastAttackSoundVariant { get; private set; }
 
         public void Configure(int poolSize)
         {
@@ -49,8 +51,18 @@ namespace CardDefense.Combat
             attackAudio.playOnAwake = false;
             attackAudio.spatialBlend = 0f;
             attackAudio.volume = 0.34f * sfxVolume;
-            basicAttackClip = CreateAttackClip("CardShot", 420f, 0.075f, 1.25f, 0.015f);
-            fusionAttackClip = CreateAttackClip("FusionShot", 620f, 0.11f, 1.4f, 0.025f);
+            basicAttackClips = new[]
+            {
+                CreateAttackClip("CardShot_A", 390f, 0.072f, 1.22f, 0.012f),
+                CreateAttackClip("CardShot_B", 455f, 0.078f, 1.28f, 0.018f),
+                CreateAttackClip("CardShot_C", 520f, 0.068f, 1.18f, 0.014f)
+            };
+            fusionAttackClips = new[]
+            {
+                CreateAttackClip("FusionShot_A", 580f, 0.105f, 1.36f, 0.022f),
+                CreateAttackClip("FusionShot_B", 680f, 0.12f, 1.46f, 0.03f),
+                CreateAttackClip("FusionShot_C", 760f, 0.115f, 1.32f, 0.026f)
+            };
             criticalAttackClip = CreateAttackClip("CriticalShot", 240f, 0.18f, 2.2f, 0.09f);
             beams = new BeamEffect[Mathf.Max(8, poolSize)];
             projectiles = new ProjectileEffect[beams.Length];
@@ -361,9 +373,9 @@ namespace CardDefense.Combat
         {
             if (!sfxEnabled || attackAudio == null || Time.unscaledTime < nextAttackAudioTime) return;
             nextAttackAudioTime = Time.unscaledTime + (critical ? 0.025f : 0.055f);
-            AudioClip clip = critical
-                ? criticalAttackClip
-                : hand >= PokerHand.Straight ? fusionAttackClip : basicAttackClip;
+            AudioClip[] variants = hand >= PokerHand.Straight ? fusionAttackClips : basicAttackClips;
+            LastAttackSoundVariant = attackAudioSequence++ % variants.Length;
+            AudioClip clip = critical ? criticalAttackClip : variants[LastAttackSoundVariant];
             float volume = critical ? 1f : hand >= PokerHand.Straight ? 0.75f : 0.5f;
             attackAudio.pitch = critical ? Random.Range(0.92f, 1.04f) : Random.Range(0.97f, 1.06f);
             attackAudio.PlayOneShot(clip, volume);

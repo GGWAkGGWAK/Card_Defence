@@ -11,11 +11,14 @@ namespace CardDefense.UI
         public bool IsPlaying => timer > 0f;
         public string LastPresentation { get; private set; }
         public PokerHand LastFusionHand { get; private set; }
+        public int LastFusionBurstCount { get; private set; }
 
         private CardSummonController summon;
         private WaveDirector waves;
         private Image flash;
         private Text banner;
+        private RectTransform fusionBurst;
+        private Image[] burstRays;
         private float timer;
         private float duration;
         private Color flashColor;
@@ -47,9 +50,21 @@ namespace CardDefense.UI
             text.a = fade;
             banner.color = text;
             banner.rectTransform.localScale = Vector3.one * Mathf.Lerp(1.22f, 1f, Mathf.Clamp01(normalized * 4f));
+            if (fusionBurst != null && fusionBurst.gameObject.activeSelf)
+            {
+                fusionBurst.localRotation = Quaternion.Euler(0f, 0f, normalized * 110f);
+                fusionBurst.localScale = Vector3.one * Mathf.Lerp(0.35f, 1.45f, normalized);
+                for (int i = 0; i < burstRays.Length; i++)
+                {
+                    Color rayColor = burstRays[i].color;
+                    rayColor.a = fade * 0.78f;
+                    burstRays[i].color = rayColor;
+                }
+            }
             if (timer > 0f) return;
             flash.gameObject.SetActive(false);
             banner.gameObject.SetActive(false);
+            if (fusionBurst != null) fusionBurst.gameObject.SetActive(false);
         }
 
         private void OnDestroy()
@@ -66,8 +81,17 @@ namespace CardDefense.UI
         private void HandleMerged(PokerHand hand)
         {
             LastFusionHand = hand;
-            Show(PokerHandInfo.KoreanName(hand) + " 합성 성공!", "FUSION", 1.05f,
-                new Color(1f, 0.72f, 0.08f, 0.18f), CombatEffectSystem.HandColor(hand));
+            bool legendary = hand >= PokerHand.StraightFlush;
+            bool rare = hand >= PokerHand.Flush;
+            LastFusionBurstCount = legendary ? 12 : rare ? 8 : 4;
+            Show(PokerHandInfo.KoreanName(hand) + " 합성 성공!",
+                legendary ? "FUSION_LEGENDARY" : rare ? "FUSION_RARE" : "FUSION_COMMON",
+                legendary ? 1.55f : rare ? 1.28f : 1.05f,
+                new Color(CombatEffectSystem.HandColor(hand).r,
+                    CombatEffectSystem.HandColor(hand).g,
+                    CombatEffectSystem.HandColor(hand).b, legendary ? 0.34f : rare ? 0.25f : 0.18f),
+                CombatEffectSystem.HandColor(hand));
+            ShowFusionBurst(CombatEffectSystem.HandColor(hand), LastFusionBurstCount);
         }
 
         private void HandleRoundChanged(int round)
@@ -103,6 +127,25 @@ namespace CardDefense.UI
             banner.transform.SetAsLastSibling();
         }
 
+        private void ShowFusionBurst(Color color, int count)
+        {
+            if (fusionBurst == null || burstRays == null) return;
+            fusionBurst.localRotation = Quaternion.identity;
+            fusionBurst.localScale = Vector3.one * 0.35f;
+            fusionBurst.gameObject.SetActive(true);
+            fusionBurst.SetAsLastSibling();
+            banner.transform.SetAsLastSibling();
+            for (int i = 0; i < burstRays.Length; i++)
+            {
+                bool enabled = i < count;
+                burstRays[i].gameObject.SetActive(enabled);
+                if (!enabled) continue;
+                Color rayColor = color;
+                rayColor.a = 0f;
+                burstRays[i].color = rayColor;
+            }
+        }
+
         private void BuildUi(Transform canvas, Font font)
         {
             GameObject flashObject = new GameObject("PresentationFlash", typeof(RectTransform), typeof(Image));
@@ -132,8 +175,32 @@ namespace CardDefense.UI
             Outline outline = bannerObject.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
             outline.effectDistance = new Vector2(3f, -3f);
+
+            GameObject burstObject = new GameObject("FusionTierBurst", typeof(RectTransform));
+            burstObject.transform.SetParent(canvas, false);
+            fusionBurst = burstObject.GetComponent<RectTransform>();
+            fusionBurst.anchorMin = new Vector2(0.5f, 0.5f);
+            fusionBurst.anchorMax = new Vector2(0.5f, 0.5f);
+            fusionBurst.sizeDelta = new Vector2(420f, 420f);
+            burstRays = new Image[12];
+            for (int i = 0; i < burstRays.Length; i++)
+            {
+                GameObject rayObject = new GameObject("FusionRay_" + i.ToString("00"),
+                    typeof(RectTransform), typeof(Image));
+                rayObject.transform.SetParent(fusionBurst, false);
+                RectTransform ray = rayObject.GetComponent<RectTransform>();
+                ray.anchorMin = new Vector2(0.5f, 0.5f);
+                ray.anchorMax = new Vector2(0.5f, 0.5f);
+                ray.pivot = new Vector2(0.5f, 0f);
+                ray.sizeDelta = new Vector2(i % 2 == 0 ? 8f : 5f, i % 2 == 0 ? 190f : 145f);
+                ray.localRotation = Quaternion.Euler(0f, 0f, i * 30f);
+                Image image = rayObject.GetComponent<Image>();
+                image.raycastTarget = false;
+                burstRays[i] = image;
+            }
             flashObject.SetActive(false);
             bannerObject.SetActive(false);
+            burstObject.SetActive(false);
         }
     }
 }

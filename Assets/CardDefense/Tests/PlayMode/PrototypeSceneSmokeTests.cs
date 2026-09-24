@@ -548,7 +548,10 @@ namespace CardDefense.Tests
             PresentationEffectController presentation = Object.FindObjectOfType<PresentationEffectController>();
             Assert.IsTrue(presentation.IsPlaying);
             Assert.AreEqual(PokerHand.RoyalStraightFlush, presentation.LastFusionHand);
-            Assert.AreEqual("FUSION", presentation.LastPresentation);
+            Assert.AreEqual("FUSION_LEGENDARY", presentation.LastPresentation);
+            Assert.AreEqual(12, presentation.LastFusionBurstCount);
+            Assert.AreEqual(2, Object.FindObjectOfType<GameSettingsService>().LastMergeSoundTier);
+            Assert.IsTrue(GameObject.Find("FusionTierBurst").activeSelf);
 
             Assert.AreEqual(1, towerSystem.ActiveCount);
             Assert.AreEqual(0, summon.SelectedCount);
@@ -715,6 +718,34 @@ namespace CardDefense.Tests
             yield return new WaitForSeconds(0.65f);
             Assert.IsFalse(waves.IsChallengeBossDefeatPending);
             Assert.IsFalse(waves.HasActiveChallengeBoss);
+        }
+
+        [UnityTest]
+        public IEnumerator BossAppearanceCrossfadesMusicAndDefeatRestoresBattleTheme()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            WaveDirector waves = Object.FindObjectOfType<WaveDirector>();
+            GameSettingsService settings = Object.FindObjectOfType<GameSettingsService>();
+            Assert.IsFalse(settings.IsBossMusicActive);
+            Assert.IsTrue(waves.TrySpawnChallengeBoss());
+            yield return new WaitForSecondsRealtime(0.25f);
+            Assert.IsTrue(settings.IsBossMusicActive);
+            Assert.Greater(settings.BossMusicBlend, 0.05f);
+
+            Monster boss = null;
+            foreach (Monster candidate in Object.FindObjectsOfType<Monster>())
+                if (candidate.IsAlive && candidate.Archetype == MonsterArchetype.Boss) boss = candidate;
+            Assert.IsNotNull(boss);
+            boss.TakeDamage(boss.MaxHealth * 2f);
+            yield return new WaitForSecondsRealtime(0.75f);
+            Assert.IsFalse(settings.IsBossMusicActive);
+            float blendAfterDefeat = settings.BossMusicBlend;
+            yield return new WaitForSecondsRealtime(0.25f);
+            Assert.Less(settings.BossMusicBlend, blendAfterDefeat);
+            Assert.IsTrue(settings.IsBgmPlaying);
         }
 
         [UnityTest]
