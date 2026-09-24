@@ -39,7 +39,46 @@ namespace CardDefense.Core
         public int CardsSummoned;
         public int HandsMerged;
         public int UpgradesPurchased;
+        public int CardsSold;
+        public int BossQuestWins;
+        public int BossQuestFailures;
+        public int RegularBossesDefeated;
+        public float FastestBossKillSeconds;
+        public float LastBossKillSeconds;
+        public int PeakGold;
+        public float PeakDps;
+        public int PeakMonsters;
+        public string DefeatReason;
+        public List<BalanceCheckpointSnapshot> Checkpoints;
         public float ElapsedGameSeconds;
+    }
+
+    [Serializable]
+    public struct BalanceCheckpointSnapshot
+    {
+        public int Round;
+        public float ElapsedGameSeconds;
+        public int Gold;
+        public float TotalDps;
+        public float RequiredDps;
+        public int ActiveMonsters;
+        public int ActiveTowers;
+        public int CardsSummoned;
+        public int HandsMerged;
+        public int UpgradesPurchased;
+        public int CardsSold;
+        public int BossQuestWins;
+        public int BossQuestFailures;
+        public int RegularBossesDefeated;
+    }
+
+    [Serializable]
+    public sealed class BalanceRunReport
+    {
+        public int Version = 1;
+        public string RecordedAtUtc;
+        public RunStatisticsSnapshot Statistics;
+        public BalanceCheckpointSnapshot FinalState;
     }
 
     [Serializable]

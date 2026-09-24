@@ -14,11 +14,13 @@ namespace CardDefense.Enemies
         public event Action<Vector3, int> MonsterRewarded;
         public event Action ChallengeBossDefeated;
         public event Action ChallengeBossSpawned;
+        public event Action<int, float> RegularBossDefeated;
 
         public int CurrentRound { get; private set; }
         public float SecondsToNextRound { get; private set; }
         public bool IsGameOver { get; private set; }
         public float CurrentRequiredDps { get; private set; }
+        public string LastGameOverReason { get; private set; }
 
         private readonly Queue<WaveSpawnBatch> pendingBatches = new Queue<WaveSpawnBatch>(8);
         private GameBalanceConfig config;
@@ -31,6 +33,8 @@ namespace CardDefense.Enemies
         private RunModifierService modifiers;
         private bool restoredState;
         private Monster challengeBoss;
+        private readonly Dictionary<Monster, BossEncounter> regularBosses =
+            new Dictionary<Monster, BossEncounter>(8);
 
         public bool HasActiveChallengeBoss => challengeBoss != null && challengeBoss.IsAlive;
         public bool IsChallengeBossDefeatPending => challengeBoss != null &&
@@ -104,6 +108,8 @@ namespace CardDefense.Enemies
 
             monster.Spawn(path, archetype, health, speed, reward, releaseHandler);
             monsters.Register(monster);
+            if (archetype == MonsterArchetype.Boss)
+                regularBosses[monster] = new BossEncounter(round, Time.time);
             if (monsters.ActiveCount >= config.defeatMonsterLimit) LoseGame();
         }
 
@@ -111,6 +117,13 @@ namespace CardDefense.Enemies
         {
             monsters.Unregister(monster);
             bool wasChallengeBoss = monster == challengeBoss;
+            if (regularBosses.TryGetValue(monster, out BossEncounter encounter))
+            {
+                regularBosses.Remove(monster);
+                if (defeated)
+                    RegularBossDefeated?.Invoke(encounter.Round,
+                        Mathf.Max(0f, Time.time - encounter.StartedAt));
+            }
             if (wasChallengeBoss)
             {
                 challengeBoss = null;
@@ -162,10 +175,26 @@ namespace CardDefense.Enemies
         private void LoseGame()
         {
             if (IsGameOver) return;
+            LastGameOverReason = "몬스터 수량 한계 도달 (" + monsters.ActiveCount + "/" +
+                                 config.defeatMonsterLimit + ")";
             IsGameOver = true;
             GameLost?.Invoke();
             Time.timeScale = 0f;
         }
+
+#if UNITY_EDITOR
+        public void ForceRoundForTesting(int round)
+        {
+            CurrentRound = Mathf.Max(1, round);
+            CurrentRequiredDps = AdjustedRoundBalanceCalculator.Calculate(config, CurrentRound).RequiredDps;
+            RoundChanged?.Invoke(CurrentRound);
+        }
+
+        public void ForceGameOverForTesting()
+        {
+            LoseGame();
+        }
+#endif
 
         public static float CalculateSpawnInterval(GameBalanceConfig balance, int monsterCount)
         {
@@ -223,6 +252,8 @@ namespace CardDefense.Enemies
                     monsters.Register(monster);
                     if (monsterSnapshots[i].Archetype == MonsterArchetype.Boss &&
                         monsterSnapshots[i].Reward <= 0) challengeBoss = monster;
+                    else if (monsterSnapshots[i].Archetype == MonsterArchetype.Boss)
+                        regularBosses[monster] = new BossEncounter(CurrentRound, Time.time);
                 }
             }
             restoredState = true;
@@ -249,6 +280,18 @@ namespace CardDefense.Enemies
                 Remaining = remaining;
                 SpawnedCount = spawnedCount;
                 TotalCount = Mathf.Max(remaining + spawnedCount, totalCount);
+            }
+        }
+
+        private readonly struct BossEncounter
+        {
+            public readonly int Round;
+            public readonly float StartedAt;
+
+            public BossEncounter(int round, float startedAt)
+            {
+                Round = round;
+                StartedAt = startedAt;
             }
         }
     }

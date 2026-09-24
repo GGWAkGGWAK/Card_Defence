@@ -241,4 +241,135 @@ namespace CardDefense.UI
             if (label != null) label.text = value;
         }
     }
+
+    public sealed class RunResultController : MonoBehaviour
+    {
+        public bool IsVisible => panel != null && panel.activeSelf;
+        public string SummaryText => summaryText != null ? summaryText.text : string.Empty;
+        public string CheckpointText => checkpointText != null ? checkpointText.text : string.Empty;
+
+        private WaveDirector waves;
+        private RunStatisticsService statistics;
+        private PlayerProfileService profile;
+        private GameObject panel;
+        private Text summaryText;
+        private Text checkpointText;
+        private Button restartButton;
+        private Button closeButton;
+
+        public void Configure(Transform canvas, Font font, WaveDirector waveDirector,
+            RunStatisticsService statisticsService, PlayerProfileService profileService)
+        {
+            waves = waveDirector;
+            statistics = statisticsService;
+            profile = profileService;
+            BuildUi(canvas, font);
+            panel.SetActive(false);
+            waves.GameLost += ShowResult;
+        }
+
+        private void OnDestroy()
+        {
+            if (waves != null) waves.GameLost -= ShowResult;
+            if (restartButton != null) restartButton.onClick.RemoveListener(RestartGame);
+            if (closeButton != null) closeButton.onClick.RemoveListener(Close);
+        }
+
+        private void ShowResult()
+        {
+            summaryText.text = statistics.GetDetailedRunSummary() + "\n" +
+                               "개인 최고 R" + profile.Data.BestRound + " · 총 플레이 " +
+                               profile.Data.TotalRuns + "회";
+            checkpointText.text = "밸런스 체크포인트\n" + statistics.GetCheckpointSummary() +
+                                  (string.IsNullOrEmpty(statistics.LastExportPath)
+                                      ? "\n로그 저장 실패"
+                                      : "\nJSON 밸런스 로그 저장 완료");
+            panel.SetActive(true);
+            panel.transform.SetAsLastSibling();
+        }
+
+        public void Close()
+        {
+            panel.SetActive(false);
+        }
+
+        public void RestartGame()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+        }
+
+        private void BuildUi(Transform canvas, Font font)
+        {
+            panel = new GameObject("RunResultPanel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(canvas, false);
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.055f, 0.10f);
+            panelRect.anchorMax = new Vector2(0.945f, 0.90f);
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+            panel.GetComponent<Image>().color = new Color(0.015f, 0.045f, 0.055f, 0.985f);
+
+            Text title = CreateText(panel.transform, "RunResultTitle", "RUN RESULT · 전투 분석", 46,
+                new Vector2(0.06f, 0.85f), new Vector2(0.94f, 0.97f), font,
+                new Color(1f, 0.8f, 0.28f, 1f));
+            title.fontStyle = FontStyle.Bold;
+            summaryText = CreateText(panel.transform, "RunResultSummary", string.Empty, 27,
+                new Vector2(0.08f, 0.48f), new Vector2(0.92f, 0.84f), font, Color.white);
+            summaryText.alignment = TextAnchor.UpperLeft;
+            checkpointText = CreateText(panel.transform, "RunResultCheckpoints", string.Empty, 24,
+                new Vector2(0.08f, 0.20f), new Vector2(0.92f, 0.47f), font,
+                new Color(0.55f, 0.92f, 0.9f, 1f));
+            checkpointText.alignment = TextAnchor.UpperLeft;
+            closeButton = CreateButton(panel.transform, "RunResultCloseButton", "결과 닫기",
+                new Vector2(0.08f, 0.055f), new Vector2(0.47f, 0.155f), font,
+                new Color(0.18f, 0.35f, 0.39f, 1f));
+            restartButton = CreateButton(panel.transform, "RunResultRestartButton", "새 게임",
+                new Vector2(0.53f, 0.055f), new Vector2(0.92f, 0.155f), font,
+                new Color(0.76f, 0.18f, 0.22f, 1f));
+            closeButton.onClick.AddListener(Close);
+            restartButton.onClick.AddListener(RestartGame);
+        }
+
+        private static Text CreateText(Transform parent, string name, string value, int size,
+            Vector2 min, Vector2 max, Font font, Color color)
+        {
+            GameObject child = new GameObject(name, typeof(RectTransform), typeof(Text));
+            child.transform.SetParent(parent, false);
+            RectTransform rect = child.GetComponent<RectTransform>();
+            rect.anchorMin = min;
+            rect.anchorMax = max;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            Text text = child.GetComponent<Text>();
+            text.font = font != null ? font : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.text = value;
+            text.fontSize = size;
+            text.color = color;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 14;
+            text.resizeTextMaxSize = size;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            return text;
+        }
+
+        private static Button CreateButton(Transform parent, string name, string label,
+            Vector2 min, Vector2 max, Font font, Color color)
+        {
+            GameObject child = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            child.transform.SetParent(parent, false);
+            RectTransform rect = child.GetComponent<RectTransform>();
+            rect.anchorMin = min;
+            rect.anchorMax = max;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            child.GetComponent<Image>().color = color;
+            Text text = CreateText(child.transform, "Label", label, 30, Vector2.zero, Vector2.one,
+                font, Color.white);
+            text.fontStyle = FontStyle.Bold;
+            return child.GetComponent<Button>();
+        }
+    }
 }

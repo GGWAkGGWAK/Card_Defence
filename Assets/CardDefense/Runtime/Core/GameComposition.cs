@@ -105,7 +105,7 @@ namespace CardDefense.Core
             waves.SetRunModifiers(modifiers);
             effects.Bind(waves);
             RunStatisticsService statistics = gameObject.AddComponent<RunStatisticsService>();
-            statistics.Configure(waves, summon, progression);
+            statistics.Configure(waves, summon, progression, economy, towers, monsters);
             PlayerProfileService profile = gameObject.AddComponent<PlayerProfileService>();
             profile.Configure(waves, statistics);
             GrowthChoiceController growth = hud.gameObject.AddComponent<GrowthChoiceController>();
@@ -114,6 +114,7 @@ namespace CardDefense.Core
             BossQuestController bossQuest = hud.gameObject.AddComponent<BossQuestController>();
             bossQuest.Configure(uiRoot, messageText != null ? messageText.font : null,
                 config, waves, economy, modifiers);
+            statistics.BindBossQuest(bossQuest);
             RunSaveService runSave = gameObject.AddComponent<RunSaveService>();
             runSave.Configure(economy, progression, modifiers, statistics, summon, monsters, waves, growth,
                 bossQuest);
@@ -122,6 +123,9 @@ namespace CardDefense.Core
                 speedButton,
                 economy, waves, monsters, summon, towers, config, statistics, profile, growth, modifiers,
                 runSave);
+            RunResultController result = hud.gameObject.AddComponent<RunResultController>();
+            result.Configure(uiRoot, messageText != null ? messageText.font : null,
+                waves, statistics, profile);
             StartupMenuController startup = hud.gameObject.AddComponent<StartupMenuController>();
             startup.Configure(uiRoot, messageText != null ? messageText.font : null, runSave, profile);
             TutorialController tutorial = hud.gameObject.AddComponent<TutorialController>();

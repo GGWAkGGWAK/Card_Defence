@@ -23,6 +23,23 @@ namespace CardDefense.Tests
                     SummonCostMultiplier = 0.9f,
                     ChoiceCount = 3
                 },
+                Statistics = new RunStatisticsSnapshot
+                {
+                    HighestRound = 30,
+                    CardsSold = 4,
+                    BossQuestWins = 2,
+                    BossQuestFailures = 1,
+                    PeakDps = 987.6f,
+                    DefeatReason = "몬스터 수량 한계 도달",
+                    Checkpoints = new List<BalanceCheckpointSnapshot>
+                    {
+                        new BalanceCheckpointSnapshot
+                        {
+                            Round = 30, Gold = 222, TotalDps = 987.6f,
+                            RequiredDps = 1100f, ActiveMonsters = 26
+                        }
+                    }
+                },
                 Wave = new WaveDirectorSnapshot { CurrentRound = 23, SecondsToNextRound = 8.5f },
                 Towers = new List<CardTowerSnapshot>
                 {
@@ -55,6 +72,12 @@ namespace CardDefense.Tests
             Assert.AreEqual(PokerHand.OnePair, restored.Towers[0].Hand);
             Assert.AreEqual(MonsterArchetype.Boss, restored.Monsters[0].Archetype);
             Assert.AreEqual(0.4f, restored.Monsters[0].Progress, 0.001f);
+            Assert.AreEqual(4, restored.Statistics.CardsSold);
+            Assert.AreEqual(2, restored.Statistics.BossQuestWins);
+            Assert.AreEqual(1, restored.Statistics.BossQuestFailures);
+            Assert.AreEqual(30, restored.Statistics.Checkpoints[0].Round);
+            Assert.AreEqual(1100f, restored.Statistics.Checkpoints[0].RequiredDps, 0.001f);
+            Assert.AreEqual("몬스터 수량 한계 도달", restored.Statistics.DefeatReason);
         }
     }
 }

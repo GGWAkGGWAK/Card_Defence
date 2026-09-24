@@ -782,5 +782,36 @@ namespace CardDefense.Tests
             Assert.Greater(maximumOrthographicSize, 8.8f,
                 "Very tall Android screens should use camera expansion instead of over-compressing cards.");
         }
+
+        [UnityTest]
+        public IEnumerator GameOverShowsDetailedResultAndExportsBalanceLog()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("CardDefensePrototype", LoadSceneMode.Single);
+            while (!load.isDone) yield return null;
+            yield return null;
+
+            WaveDirector waves = Object.FindObjectOfType<WaveDirector>();
+            RunStatisticsService statistics = Object.FindObjectOfType<RunStatisticsService>();
+            RunResultController result = Object.FindObjectOfType<RunResultController>();
+            Assert.IsNotNull(result);
+            Assert.IsFalse(result.IsVisible);
+
+            waves.ForceRoundForTesting(10);
+            waves.ForceRoundForTesting(20);
+            waves.ForceRoundForTesting(30);
+            Assert.AreEqual(3, statistics.Checkpoints.Count);
+            waves.ForceGameOverForTesting();
+            yield return null;
+
+            Assert.IsTrue(result.IsVisible);
+            StringAssert.Contains("패배 원인", result.SummaryText);
+            StringAssert.Contains("R30", result.CheckpointText);
+            Assert.IsFalse(string.IsNullOrEmpty(statistics.LastExportPath));
+            Assert.IsTrue(System.IO.File.Exists(statistics.LastExportPath));
+            string json = System.IO.File.ReadAllText(statistics.LastExportPath);
+            StringAssert.Contains("\"FinalState\"", json);
+            StringAssert.Contains("\"Round\": 30", json);
+            System.IO.File.Delete(statistics.LastExportPath);
+        }
     }
 }
