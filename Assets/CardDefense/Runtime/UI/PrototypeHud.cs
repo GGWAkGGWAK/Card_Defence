@@ -256,6 +256,9 @@ namespace CardDefense.UI
         private Text checkpointText;
         private Button restartButton;
         private Button closeButton;
+        private CanvasGroup panelGroup;
+        private RectTransform panelRectTransform;
+        private float revealProgress;
 
         public void Configure(Transform canvas, Font font, WaveDirector waveDirector,
             RunStatisticsService statisticsService, PlayerProfileService profileService)
@@ -286,6 +289,18 @@ namespace CardDefense.UI
                                       : "\nJSON 밸런스 로그 저장 완료");
             panel.SetActive(true);
             panel.transform.SetAsLastSibling();
+            revealProgress = 0f;
+            panelGroup.alpha = 0f;
+            panelRectTransform.localScale = Vector3.one * 0.88f;
+        }
+
+        private void Update()
+        {
+            if (panel == null || !panel.activeSelf || revealProgress >= 1f) return;
+            revealProgress = Mathf.Min(1f, revealProgress + Time.unscaledDeltaTime * 4.5f);
+            float eased = 1f - Mathf.Pow(1f - revealProgress, 3f);
+            panelGroup.alpha = eased;
+            panelRectTransform.localScale = Vector3.one * Mathf.Lerp(0.88f, 1f, eased);
         }
 
         public void Close()
@@ -301,9 +316,12 @@ namespace CardDefense.UI
 
         private void BuildUi(Transform canvas, Font font)
         {
-            panel = new GameObject("RunResultPanel", typeof(RectTransform), typeof(Image));
+            panel = new GameObject("RunResultPanel", typeof(RectTransform), typeof(Image),
+                typeof(CanvasGroup));
             panel.transform.SetParent(canvas, false);
             RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRectTransform = panelRect;
+            panelGroup = panel.GetComponent<CanvasGroup>();
             panelRect.anchorMin = new Vector2(0.055f, 0.10f);
             panelRect.anchorMax = new Vector2(0.945f, 0.90f);
             panelRect.offsetMin = Vector2.zero;

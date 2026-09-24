@@ -32,6 +32,9 @@ namespace CardDefense.UI
         private Button closeButton;
         private Slider bgmSlider;
         private Slider sfxSlider;
+        private CanvasGroup panelGroup;
+        private RectTransform panelRectTransform;
+        private float openTransition;
         private float previousTimeScale = 1f;
 
         public void Configure(Transform canvas, Font font, StartupMenuController startupMenu,
@@ -49,6 +52,13 @@ namespace CardDefense.UI
         {
             if (openButton != null)
                 openButton.gameObject.SetActive(startup == null || !startup.IsVisible);
+            if (panel != null && panel.activeSelf && openTransition < 1f)
+            {
+                openTransition = Mathf.Min(1f, openTransition + Time.unscaledDeltaTime * 5.5f);
+                float eased = 1f - Mathf.Pow(1f - openTransition, 3f);
+                panelGroup.alpha = eased;
+                panelRectTransform.localScale = Vector3.one * Mathf.Lerp(0.9f, 1f, eased);
+            }
         }
 
         private void OnDestroy()
@@ -72,6 +82,9 @@ namespace CardDefense.UI
             Time.timeScale = 0f;
             panel.SetActive(true);
             panel.transform.SetAsLastSibling();
+            openTransition = 0f;
+            panelGroup.alpha = 0f;
+            panelRectTransform.localScale = Vector3.one * 0.9f;
             ShowPage(GuidePage.Settings);
         }
 
@@ -199,9 +212,12 @@ namespace CardDefense.UI
             openButton.GetComponentInChildren<Text>().fontSize = 25;
             openButton.onClick.AddListener(Open);
 
-            panel = new GameObject("SettingsGuidePanel", typeof(RectTransform), typeof(Image));
+            panel = new GameObject("SettingsGuidePanel", typeof(RectTransform), typeof(Image),
+                typeof(CanvasGroup));
             panel.transform.SetParent(canvas, false);
             RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRectTransform = panelRect;
+            panelGroup = panel.GetComponent<CanvasGroup>();
             panelRect.anchorMin = new Vector2(0.06f, 0.12f);
             panelRect.anchorMax = new Vector2(0.94f, 0.88f);
             panelRect.offsetMin = Vector2.zero;

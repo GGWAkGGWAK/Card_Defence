@@ -15,10 +15,15 @@ namespace CardDefense.Core
         public bool VibrationEnabled { get; private set; }
         public float BgmVolume { get; private set; }
         public float SfxVolume { get; private set; }
-        public bool IsBgmPlaying => bgmSource != null && bgmSource.isPlaying;
-        public float EffectiveBgmVolume => bgmSource != null ? bgmSource.volume : 0f;
+        public bool IsBgmPlaying => (bgmSource != null && bgmSource.isPlaying) ||
+                                    (bossBgmSource != null && bossBgmSource.isPlaying);
+        public float EffectiveBgmVolume => (bgmSource != null ? bgmSource.volume : 0f) +
+                                           (bossBgmSource != null ? bossBgmSource.volume : 0f);
         public float BgmClipDuration => bgmSource != null && bgmSource.clip != null ? bgmSource.clip.length : 0f;
         public float BgmSignalRms { get; private set; }
+        public bool IsBossMusicActive => bossMusicRequested;
+        public float BossMusicBlend { get; private set; }
+        public int LastMergeSoundTier { get; private set; }
 
 #if UNITY_EDITOR
         public static string EditorSettingsPrefixOverride;
@@ -36,9 +41,12 @@ namespace CardDefense.Core
         }
 
         private AudioSource bgmSource;
+        private AudioSource bossBgmSource;
         private AudioSource sfxSource;
         private AudioClip summonClip;
         private AudioClip mergeClip;
+        private AudioClip rareMergeClip;
+        private AudioClip legendaryMergeClip;
         private AudioClip upgradeClip;
         private AudioClip alertClip;
         private AudioClip defeatClip;
@@ -47,6 +55,9 @@ namespace CardDefense.Core
         private WaveDirector waves;
         private GrowthChoiceController growth;
         private CombatEffectSystem combatEffects;
+        private bool regularBossMusic;
+        private bool challengeBossMusic;
+        private bool bossMusicRequested;
 
         public void Configure(CardSummonController summonController,
             PokerProgressionService progressionService, WaveDirector waveDirector,
@@ -71,13 +82,26 @@ namespace CardDefense.Core
             bgmSource.ignoreListenerPause = true;
             bgmSource.dopplerLevel = 0f;
             bgmSource.volume = 0.82f * BgmVolume;
-            bgmSource.clip = CreateDefenseTheme(out float signalRms);
+            bgmSource.clip = CreateDefenseTheme(out float signalRms, false);
             BgmSignalRms = signalRms;
+            bossBgmSource = gameObject.AddComponent<AudioSource>();
+            bossBgmSource.loop = true;
+            bossBgmSource.playOnAwake = false;
+            bossBgmSource.spatialBlend = 0f;
+            bossBgmSource.priority = 31;
+            bossBgmSource.ignoreListenerPause = true;
+            bossBgmSource.dopplerLevel = 0f;
+            bossBgmSource.volume = 0f;
+            bossBgmSource.clip = CreateDefenseTheme(out _, true);
             sfxSource = gameObject.AddComponent<AudioSource>();
             sfxSource.playOnAwake = false;
             sfxSource.volume = 0.42f * SfxVolume;
             summonClip = CreateEffect("Summon", 0.14f, new[] { 523.25f, 783.99f }, 1.32f, 0.02f);
             mergeClip = CreateEffect("Merge", 0.42f, new[] { 392f, 523.25f, 659.25f, 783.99f }, 1.08f, 0.015f);
+            rareMergeClip = CreateEffect("RareMerge", 0.55f,
+                new[] { 523.25f, 659.25f, 783.99f, 1046.5f, 1318.51f }, 1.16f, 0.022f);
+            legendaryMergeClip = CreateEffect("LegendaryMerge", 0.78f,
+                new[] { 392f, 523.25f, 659.25f, 783.99f, 1046.5f, 1567.98f }, 1.34f, 0.035f);
             upgradeClip = CreateEffect("Upgrade", 0.26f, new[] { 659.25f, 987.77f, 1318.51f }, 1.18f, 0.025f);
             alertClip = CreateEffect("BossAlert", 0.72f, new[] { 82.41f, 123.47f, 164.81f }, 0.76f, 0.08f);
             defeatClip = CreateEffect("Defeat", 0.9f, new[] { 220f, 174.61f, 130.81f }, 0.55f, 0.045f);
@@ -89,6 +113,8 @@ namespace CardDefense.Core
             progression.HandUpgraded += HandleUpgraded;
             waves.RoundChanged += HandleRoundChanged;
             waves.ChallengeBossSpawned += HandleChallengeBossSpawned;
+            waves.ChallengeBossDefeated += HandleChallengeBossDefeated;
+            waves.RegularBossDefeated += HandleRegularBossDefeated;
             waves.GameLost += HandleGameLost;
             growth.ChoiceSelected += HandleGrowthSelected;
         }
@@ -105,6 +131,8 @@ namespace CardDefense.Core
             {
                 waves.RoundChanged -= HandleRoundChanged;
                 waves.ChallengeBossSpawned -= HandleChallengeBossSpawned;
+                waves.ChallengeBossDefeated -= HandleChallengeBossDefeated;
+                waves.RegularBossDefeated -= HandleRegularBossDefeated;
                 waves.GameLost -= HandleGameLost;
             }
             if (growth != null) growth.ChoiceSelected -= HandleGrowthSelected;
@@ -130,8 +158,8 @@ namespace CardDefense.Core
             BgmVolume = Mathf.Clamp01(volume);
             PlayerPrefs.SetFloat(Prefix + "BgmVolume", BgmVolume);
             PlayerPrefs.Save();
-            if (bgmSource != null) bgmSource.volume = 0.82f * BgmVolume;
             if (BgmEnabled && BgmVolume > 0f) ApplyBgm();
+            ApplyBgmVolumes(true);
         }
 
         public void SetSfxVolume(float volume)
@@ -164,7 +192,10 @@ namespace CardDefense.Core
 
         private void HandleMerged(PokerHand hand)
         {
-            Play(mergeClip);
+            LastMergeSoundTier = hand >= PokerHand.StraightFlush ? 2 : hand >= PokerHand.Flush ? 1 : 0;
+            AudioClip clip = LastMergeSoundTier == 2 ? legendaryMergeClip :
+                LastMergeSoundTier == 1 ? rareMergeClip : mergeClip;
+            Play(clip, LastMergeSoundTier == 2 ? 1.04f : LastMergeSoundTier == 1 ? 1.02f : 1f);
             Vibrate();
         }
 
@@ -173,6 +204,8 @@ namespace CardDefense.Core
         private void HandleRoundChanged(int round)
         {
             if (round % 10 != 0) return;
+            regularBossMusic = true;
+            RefreshBossMusicRequest();
             Play(alertClip);
             Vibrate();
         }
@@ -181,12 +214,29 @@ namespace CardDefense.Core
 
         private void HandleChallengeBossSpawned()
         {
+            challengeBossMusic = true;
+            RefreshBossMusicRequest();
             Play(alertClip);
             Vibrate();
         }
 
+        private void HandleChallengeBossDefeated()
+        {
+            challengeBossMusic = false;
+            RefreshBossMusicRequest();
+        }
+
+        private void HandleRegularBossDefeated(int round, float killSeconds)
+        {
+            regularBossMusic = false;
+            RefreshBossMusicRequest();
+        }
+
         private void HandleGameLost()
         {
+            regularBossMusic = false;
+            challengeBossMusic = false;
+            RefreshBossMusicRequest();
             Play(defeatClip);
             Vibrate();
         }
@@ -197,14 +247,25 @@ namespace CardDefense.Core
             if (BgmEnabled)
             {
                 if (!bgmSource.isPlaying) bgmSource.Play();
+                if (bossBgmSource != null && !bossBgmSource.isPlaying)
+                {
+                    bossBgmSource.timeSamples = bgmSource.timeSamples;
+                    bossBgmSource.Play();
+                }
             }
-            else bgmSource.Stop();
+            else
+            {
+                bgmSource.Stop();
+                if (bossBgmSource != null) bossBgmSource.Stop();
+            }
+            ApplyBgmVolumes(true);
         }
 
         private void Update()
         {
             if (BgmEnabled && BgmVolume > 0f && bgmSource != null && bgmSource.clip != null &&
-                !bgmSource.isPlaying) bgmSource.Play();
+                (!bgmSource.isPlaying || bossBgmSource != null && !bossBgmSource.isPlaying)) ApplyBgm();
+            ApplyBgmVolumes(false);
         }
 
         private void OnApplicationFocus(bool focused)
@@ -212,10 +273,27 @@ namespace CardDefense.Core
             if (focused) ApplyBgm();
         }
 
-        private void Play(AudioClip clip)
+        private void Play(AudioClip clip, float pitch = 1f)
         {
             if (!SfxEnabled || sfxSource == null || clip == null) return;
+            sfxSource.pitch = pitch;
             sfxSource.PlayOneShot(clip);
+        }
+
+        private void RefreshBossMusicRequest()
+        {
+            bossMusicRequested = regularBossMusic || challengeBossMusic;
+        }
+
+        private void ApplyBgmVolumes(bool immediate)
+        {
+            if (bgmSource == null || bossBgmSource == null) return;
+            float target = bossMusicRequested ? 1f : 0f;
+            BossMusicBlend = immediate ? target : Mathf.MoveTowards(BossMusicBlend, target,
+                Time.unscaledDeltaTime / 1.25f);
+            float master = BgmEnabled ? 0.82f * BgmVolume : 0f;
+            bgmSource.volume = master * Mathf.Sqrt(1f - BossMusicBlend);
+            bossBgmSource.volume = master * Mathf.Sqrt(BossMusicBlend);
         }
 
         private void Vibrate()
@@ -264,7 +342,7 @@ namespace CardDefense.Core
             return clip;
         }
 
-        private static AudioClip CreateDefenseTheme(out float signalRms)
+        private static AudioClip CreateDefenseTheme(out float signalRms, bool bossVersion)
         {
             const int sampleRate = 22050;
             const float duration = 16f;
@@ -277,7 +355,7 @@ namespace CardDefense.Core
             for (int i = 0; i < frameCount; i++)
             {
                 float time = i / (float)sampleRate;
-                float beatTime = time * 2f;
+                float beatTime = time * (bossVersion ? 3f : 2f);
                 int beatIndex = Mathf.FloorToInt(beatTime);
                 float beatPhase = beatTime - beatIndex;
                 int bar = (beatIndex / 4) % 4;
@@ -317,6 +395,14 @@ namespace CardDefense.Core
                 float loopFade = Mathf.Clamp01(time / 0.055f) *
                                  Mathf.Clamp01((duration - time) / 0.055f);
                 float rhythm = kick + snare + hat;
+                if (bossVersion)
+                {
+                    float pulsePhase = time * 6f - Mathf.Floor(time * 6f);
+                    float pulse = Mathf.Sin(2f * Mathf.PI * root * 4f * time) *
+                                  Mathf.Exp(-pulsePhase * 9f) * 0.11f;
+                    rhythm = rhythm * 1.16f + pulse;
+                    melody *= 1.12f;
+                }
                 float left = (pad + bass + rhythm + melody * (eighth % 2 == 0 ? 0.72f : 1f)) * loopFade;
                 float right = (pad * 0.96f + bass + rhythm + melody * (eighth % 2 == 0 ? 1f : 0.72f)) *
                               loopFade;
@@ -327,7 +413,8 @@ namespace CardDefense.Core
                 sumSquares += left * left + right * right;
             }
             signalRms = Mathf.Sqrt(sumSquares / Mathf.Max(1, data.Length));
-            AudioClip clip = AudioClip.Create("CardDefenseBattleTheme", frameCount, channels, sampleRate, false);
+            AudioClip clip = AudioClip.Create(bossVersion ? "CardDefenseBossTheme" :
+                "CardDefenseBattleTheme", frameCount, channels, sampleRate, false);
             clip.SetData(data, 0);
             return clip;
         }
