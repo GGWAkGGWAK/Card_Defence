@@ -14,6 +14,7 @@ namespace CardDefense.Combat
         public event Action SelectionChanged;
         public event Action CardSummoned;
         public event Action<PokerHand> CardsMerged;
+        public event Action<int> CardSold;
 
         public int SelectedCount => selected.Count;
         public PokerHand SelectedHand => focusedTower != null ? focusedTower.Hand : PokerHand.High;
@@ -312,6 +313,7 @@ namespace CardDefense.Combat
             focusedTower = selected.Count > 0 ? selected[selected.Count - 1] : null;
             ReleaseTower(tower);
             economy.AddGold(refund);
+            CardSold?.Invoke(refund);
             MessageChanged?.Invoke("카드 판매: +" + refund + "G");
             SelectionChanged?.Invoke();
         }
